@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#047857" />
+      <stop offset="50%" stop-color="#065f46" />
+      <stop offset="100%" stop-color="#064e3b" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded squircle -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+
+  <!-- Ethiopian Flag subtle accent stripes top banner -->
+  <path d="M120 40 L392 40" stroke="#047857" stroke-width="6" stroke-linecap="round" />
+  <path d="M150 48 L362 48" stroke="#fbbf24" stroke-width="6" stroke-linecap="round" />
+  <path d="M180 56 L332 56" stroke="#dc2626" stroke-width="6" stroke-linecap="round" />
+
+  <!-- Inner glowing circle ring -->
+  <circle cx="256" cy="256" r="195" fill="none" stroke="url(#goldGrad)" stroke-width="8" stroke-dasharray="16 12" opacity="0.85" />
+
+  <!-- Open Book Emblem -->
+  <g filter="url(#shadow)">
+    <!-- Book Pages Base -->
+    <path d="M110 330 C170 300 230 310 256 325 C282 310 342 300 402 330 L402 180 C342 150 282 160 256 175 C230 160 170 150 110 180 Z" 
+          fill="#f8fafc" stroke="#e2e8f0" stroke-width="4" />
+    
+    <!-- Spine divider -->
+    <line x1="256" y1="175" x2="256" y2="325" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" />
+
+    <!-- Ethiopian Fidel 'ሀ' on Left Page -->
+    <text x="180" y="260" font-family="'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif" font-size="80" font-weight="900" fill="#047857" text-anchor="middle">ሀ</text>
+    
+    <!-- Quill / Pen on Right Page -->
+    <path d="M305 285 L355 205 C360 197 368 197 372 201 C376 205 376 213 368 218 L320 295 L298 302 Z" fill="url(#goldGrad)" />
+    <polygon points="298,302 312,298 305,291" fill="#0f172a" />
+  </g>
+
+  <!-- Golden Graduation Cap / Wisdom Crest on Top -->
+  <g filter="url(#shadow)">
+    <polygon points="256,95 345,130 256,165 167,130" fill="url(#goldGrad)" stroke="#b45309" stroke-width="3" />
+    <path d="M205 145 L205 175 C205 190 228 200 256 200 C284 200 307 190 307 175 L307 145" fill="none" stroke="url(#goldGrad)" stroke-width="6" stroke-linecap="round" />
+    <!-- Tassel -->
+    <path d="M345 130 Q358 155 352 185" fill="none" stroke="#fef08a" stroke-width="4" stroke-linecap="round" />
+    <circle cx="352" cy="188" r="6" fill="#fef08a" />
+  </g>
+
+  <!-- Label text below book -->
+  <text x="256" y="390" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="800" fill="#fef08a" text-anchor="middle" letter-spacing="2">ETHIOPIAN MoE</text>
+  <text x="256" y="425" font-family="'Noto Sans Ethiopic', sans-serif" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle">የመምህራን ረዳት</text>
+</svg>

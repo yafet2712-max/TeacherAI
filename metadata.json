@@ -1,0 +1,6 @@
+{
+  "name": "Amharic Teacher Helper AI - የፊደል እና ትምህርት ረዳት",
+  "description": "Free and unlimited AI assistant for Amharic teachers and students. Generate lesson plans, worksheets, quizzes, Fidel charts, grammar drills, stories, and audio pronunciations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
