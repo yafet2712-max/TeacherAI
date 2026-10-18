@@ -611,6 +611,7 @@ interface LessonPlannerProps {
   onSaveToLibrary: (item: Omit<SavedMaterial, 'id' | 'createdAt'>) => void;
   onOpenKeyboard: () => void;
   onOpenSchoolSettings: () => void;
+  onRequireFiveDays?: (onProceed: () => void) => void;
 }
 
 export const LessonPlanner: React.FC<LessonPlannerProps> = ({
@@ -618,6 +619,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
   onSaveToLibrary,
   onOpenKeyboard,
   onOpenSchoolSettings,
+  onRequireFiveDays,
 }) => {
   const [planMode, setPlanMode] = useState<'1-day' | '5-days'>('1-day');
   const [subject, setSubject] = useState('general_science');
@@ -963,9 +965,16 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
 
           <button
             onClick={() => {
-              setPlanMode('5-days');
-              if (!fiveDaysPlan.unitAndTopic) {
-                handleLoadFiveDaysSample('Amharic');
+              const proceed = () => {
+                setPlanMode('5-days');
+                if (!fiveDaysPlan.unitAndTopic) {
+                  handleLoadFiveDaysSample('Amharic');
+                }
+              };
+              if (onRequireFiveDays) {
+                onRequireFiveDays(proceed);
+              } else {
+                proceed();
               }
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all relative ${
@@ -977,7 +986,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
             <Calendar className="w-4 h-4 text-amber-500" />
             <span>📅 5 Days Plan (የ5 ቀናት ሳምንታዊ ዕቅድ)</span>
             <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider">
-              5 Days
+              👑 Premium
             </span>
           </button>
         </div>
