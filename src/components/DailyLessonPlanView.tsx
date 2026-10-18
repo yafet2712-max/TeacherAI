@@ -195,7 +195,9 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
         <div className="space-y-2 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
             <div>
-              <span className="italic font-medium">Name of teacher:- </span>
+              <span className="italic font-medium">
+                {isOromic ? 'Maqaa Barsiisaa:- ' : isAmharic ? 'የመምህሩ ስም:- ' : 'Name of teacher:- '}
+              </span>
               {isEditing ? (
                 <input
                   type="text"
@@ -209,7 +211,9 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
             </div>
 
             <div>
-              <span className="italic font-medium">Name of School:- </span>
+              <span className="italic font-medium">
+                {isOromic ? 'Maqaa Mana Barumsaa:- ' : isAmharic ? 'የማስተማሪያ ት/ቤት ስም:- ' : 'Name of School:- '}
+              </span>
               {isEditing ? (
                 <input
                   type="text"
@@ -225,7 +229,9 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
             <div>
-              <span className="italic font-medium">Subject:- </span>
+              <span className="italic font-medium">
+                {isOromic ? 'Gosa Barnootaa:- ' : isAmharic ? 'የትምህርት ዓይነት:- ' : 'Subject:- '}
+              </span>
               {isEditing ? (
                 <input
                   type="text"
@@ -239,7 +245,9 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
             </div>
 
             <div>
-              <span className="italic font-medium">Unit and topic:- </span>
+              <span className="italic font-medium">
+                {isOromic ? 'Boqonnaa fi Mata Duree:- ' : isAmharic ? 'ምዕራፍ እና ርዕስ:- ' : 'Unit and topic:- '}
+              </span>
               {isEditing ? (
                 <input
                   type="text"
@@ -255,7 +263,9 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
             <div>
-              <span className="italic font-medium">Grade and Section:- </span>
+              <span className="italic font-medium">
+                {isOromic ? 'Kutaa fi Sekshinii:- ' : isAmharic ? 'ክፍል እና ሴክሽን:- ' : 'Grade and Section:- '}
+              </span>
               {isEditing ? (
                 <input
                   type="text"
@@ -269,7 +279,9 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
             </div>
 
             <div>
-              <span className="italic font-medium">Lesson topic:- </span>
+              <span className="italic font-medium">
+                {isOromic ? 'Mata Duree Xiqqaa:- ' : isAmharic ? 'ንዑስ ርዕስ (የክፍለ-ጊዜው ርዕስ):- ' : 'Lesson topic:- '}
+              </span>
               {isEditing ? (
                 <input
                   type="text"
@@ -284,7 +296,9 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
           </div>
 
           <div>
-            <span className="italic font-medium">Date:- </span>
+            <span className="italic font-medium">
+              {isOromic ? 'Guyyaa:- ' : isAmharic ? 'ቀን:- ' : 'Date:- '}
+            </span>
             {isEditing ? (
               <input
                 type="text"
@@ -299,7 +313,9 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
 
           <div className="pt-2 space-y-1">
             <p>
-              <span className="italic font-medium">Rationale of the topic:- </span>
+              <span className="italic font-medium">
+                {isOromic ? 'Kaayyoo/Sababii Barichaa:- ' : isAmharic ? 'የትምህርቱ አስፈላጊነት (Rationale):- ' : 'Rationale of the topic:- '}
+              </span>
               {isEditing ? (
                 <textarea
                   rows={2}
@@ -313,7 +329,9 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
             </p>
 
             <p>
-              <span className="italic font-medium">Pre-requisite knowledge:- </span>
+              <span className="italic font-medium">
+                {isOromic ? 'Beekumsa Duraan Qaban:- ' : isAmharic ? 'ቀድሞ የነበረ እውቀት (Pre-requisite):- ' : 'Pre-requisite knowledge:- '}
+              </span>
               {isEditing ? (
                 <textarea
                   rows={2}
@@ -327,7 +345,9 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
             </p>
 
             <p>
-              <span className="italic font-medium">Competencies (Learning objectives):- </span>
+              <span className="italic font-medium">
+                {isOromic ? 'Bu\'aalee Barachuu (Competencies):- ' : isAmharic ? 'የመማር ማስተማር ዓላማዎች (Competencies):- ' : 'Competencies (Learning objectives):- '}
+              </span>
               {isEditing ? (
                 <textarea
                   rows={2}
