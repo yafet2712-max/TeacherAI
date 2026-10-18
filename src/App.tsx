@@ -13,6 +13,7 @@ import { SavedLibrary } from './components/SavedLibrary';
 import { FidelKeyboard } from './components/FidelKeyboard';
 import { SchoolSettingsModal } from './components/SchoolSettingsModal';
 import { TelebirrModal } from './components/TelebirrModal';
+import { AdminDashboard } from './components/AdminDashboard';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { AppTab, SavedMaterial, SchoolProfile } from './types';
 import { ShieldCheck, School, Sparkles, BookOpen, Zap } from 'lucide-react';
@@ -56,6 +57,7 @@ export default function App() {
   });
 
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
+  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [activeServiceName, setActiveServiceName] = useState('');
   const [pendingFeatureKey, setPendingFeatureKey] = useState<string | null>(null);
 
@@ -212,6 +214,7 @@ export default function App() {
         isKeyboardOpen={isKeyboardOpen}
         schoolProfile={schoolProfile}
         onOpenSchoolSettings={handleOpenSchoolModal}
+        onOpenAdminDashboard={() => setIsAdminDashboardOpen(true)}
         publishedUrl="https://ais-pre-ggmao2jh2kg5djgbq7rjc7-389524282416.europe-west2.run.app"
       />
 
@@ -346,6 +349,19 @@ export default function App() {
         isOpen={premiumModalOpen}
         onClose={() => setPremiumModalOpen(false)}
         onSuccess={handlePaymentSuccess}
+        serviceTitle={activeServiceName}
+        featureKey={pendingFeatureKey || 'general'}
+      />
+
+      {/* Admin Dashboard Modal */}
+      <AdminDashboard
+        isOpen={isAdminDashboardOpen}
+        onClose={() => setIsAdminDashboardOpen(false)}
+        onUpdateStatus={(id, status) => {
+          if (status === 'approved') {
+            showToast('✅ የክፍያ ጥያቄ በባለቤቱ ጸድቋል! (Approved by owner)');
+          }
+        }}
       />
 
       {/* Footer */}

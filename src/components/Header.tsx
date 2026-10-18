@@ -19,7 +19,8 @@ import {
   Check,
   X,
   ExternalLink,
-  Copy
+  Copy,
+  Crown
 } from 'lucide-react';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -31,6 +32,7 @@ interface HeaderProps {
   isKeyboardOpen: boolean;
   schoolProfile: SchoolProfile;
   onOpenSchoolSettings: () => void;
+  onOpenAdminDashboard: () => void;
   publishedUrl: string;
 }
 
@@ -42,6 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
   isKeyboardOpen,
   schoolProfile,
   onOpenSchoolSettings,
+  onOpenAdminDashboard,
   publishedUrl,
 }) => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -95,6 +98,16 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Action Tools */}
           <div className="flex items-center gap-2">
+            {/* Admin Login Button */}
+            <button
+              onClick={onOpenAdminDashboard}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-stone-900 hover:bg-stone-800 text-amber-300 border border-stone-700 shadow transition"
+              title="Owner Admin Dashboard"
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">👑 Admin Login</span>
+            </button>
+
             {/* PWA Install Button */}
             <PWAInstallButton />
 
