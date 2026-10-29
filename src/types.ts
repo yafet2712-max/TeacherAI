@@ -8,7 +8,8 @@ export type AppTab =
   | 'assignment-grader'
   | 'translator'
   | 'chat'
-  | 'library';
+  | 'library'
+  | 'mark-list-tools';
 
 export interface SchoolProfile {
   schoolName: string;

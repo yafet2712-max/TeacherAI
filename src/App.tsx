@@ -14,6 +14,7 @@ import { FidelKeyboard } from './components/FidelKeyboard';
 import { SchoolSettingsModal } from './components/SchoolSettingsModal';
 import { TelebirrModal } from './components/TelebirrModal';
 import { AdminDashboard } from './components/AdminDashboard';
+import { MarkListTools } from './components/MarkListTools';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { AppTab, SavedMaterial, SchoolProfile } from './types';
 import { ShieldCheck, School, Sparkles, BookOpen, Zap } from 'lucide-react';
@@ -175,6 +176,10 @@ export default function App() {
       requirePremium('mentor', 'መምህር አማካሪ (AI Teacher Advisor & Mentor)', () => setCurrentTab(tab));
       return;
     }
+    if (tab === 'mark-list-tools') {
+      requirePremium('worksheet', 'የውጤት መዝገብ እና ፎርማቶች (Mark List & Formats)', () => setCurrentTab(tab));
+      return;
+    }
     setCurrentTab(tab);
   };
 
@@ -318,6 +323,16 @@ export default function App() {
 
         {currentTab === 'chat' && (
           <EducatorChat onOpenKeyboard={() => setIsKeyboardOpen(true)} />
+        )}
+
+        {currentTab === 'mark-list-tools' && (
+          <MarkListTools
+            schoolProfile={schoolProfile}
+            onSaveToLibrary={handleSaveToLibrary}
+            unlockedFeatures={unlockedFeatures}
+            onRequirePremium={requirePremium}
+            onOpenKeyboard={() => setIsKeyboardOpen(true)}
+          />
         )}
 
         {currentTab === 'library' && (

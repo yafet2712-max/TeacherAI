@@ -20,7 +20,8 @@ import {
   X,
   ExternalLink,
   Copy,
-  Crown
+  Crown,
+  FileSpreadsheet
 } from 'lucide-react';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -60,6 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'assignment-grader' as AppTab, amharic: 'ጽሁፍ ገምጋሚ', english: 'Work Grader', icon: CheckCircle2 },
     { id: 'translator' as AppTab, amharic: 'ባህል እና ትርጉም', english: 'Translator', icon: Languages },
     { id: 'chat' as AppTab, amharic: 'መምህር አማካሪ', english: 'AI Mentor', icon: MessageSquare },
+    { id: 'mark-list-tools' as AppTab, amharic: '📊 የውጤት መዝገብ እና ፎርማቶች', english: 'Mark List & Formats', icon: FileSpreadsheet, highlight: true },
     { id: 'library' as AppTab, amharic: 'ቤተ-መጻሕፍት', english: 'Saved Library', icon: Bookmark, badge: savedCount },
   ];
 

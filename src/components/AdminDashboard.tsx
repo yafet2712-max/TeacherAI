@@ -49,13 +49,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Default admin PIN: 1234 or phone suffix 3882
-    if (pin === '1234' || pin === '3882' || pin === '2017') {
+    // Default admin PIN: zena1221, 1234, or phone suffix 3882
+    if (pin === 'zena1221' || pin === '1234' || pin === '3882' || pin === '2017') {
       setIsAuthenticated(true);
       setError(null);
       loadRequests();
     } else {
-      setError('የአስተዳዳሪ ፒን ቁጥር ስህተት ነው (Incorrect PIN).');
+      setError('የአስተዳዳሪ የሚስጥር ቃል (Password) ስህተት ነው (Incorrect Password).');
     }
   };
 
