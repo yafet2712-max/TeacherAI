@@ -16,8 +16,10 @@ import { TelebirrModal } from './components/TelebirrModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { MarkListTools } from './components/MarkListTools';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { PWAInstallButton } from './components/PWAInstallButton';
 import { AppTab, SavedMaterial, SchoolProfile } from './types';
 import { School, Sparkles, BookOpen } from 'lucide-react';
+import { copyTextSafe } from './utils/clipboard';
 
 const STORAGE_KEY = 'amharic_teacher_helper_saved_v2';
 const SCHOOL_PROFILE_KEY = 'amharic_teacher_helper_school_profile_v1';
@@ -243,7 +245,7 @@ export default function App() {
     requirePremium('school', 'የትምህርት ቤት ስም ቀይር (School Name Customization)', () => setIsSchoolModalOpen(true));
   };
 
-  const handleInsertChar = (char: string) => {
+  const handleInsertChar = async (char: string) => {
     const activeEl = document.activeElement as HTMLInputElement | HTMLTextAreaElement | null;
     if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
       const start = activeEl.selectionStart || 0;
@@ -253,7 +255,7 @@ export default function App() {
       activeEl.selectionStart = activeEl.selectionEnd = start + char.length;
       activeEl.dispatchEvent(new Event('input', { bubbles: true }));
     } else {
-      navigator.clipboard.writeText(char);
+      await copyTextSafe(char);
     }
   };
 
@@ -295,13 +297,30 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
+            <PWAInstallButton variant="strip" publishedUrl={PUBLISHED_URL} />
             <button
-              onClick={() => {
-                navigator.clipboard.writeText(PUBLISHED_URL);
-                showToast('🔗 የተጋራው የድረ-ገጽ ሊንክ ተቀድቷል! (App link copied to clipboard)');
+              onClick={async () => {
+                if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+                  try {
+                    await navigator.share({
+                      title: 'Meskerem school ai',
+                      text: 'Ethiopian Teachers Daily & 5-Day Lesson Plans, Quizzes & Mark List Tools',
+                      url: PUBLISHED_URL,
+                    });
+                    return;
+                  } catch {
+                    // Fallback to copy
+                  }
+                }
+                const ok = await copyTextSafe(PUBLISHED_URL);
+                showToast(
+                  ok
+                    ? '🔗 የተጋራው የድረ-ገጽ ሊንክ ተቀድቷል! (App link copied to clipboard)'
+                    : '🔗 ከላይ ያለውን "Share" ቁልፍ ተጭነው ሊንኩን ይላኩ (Use Share button in header)'
+                );
               }}
               className="px-3 py-1 bg-amber-400 hover:bg-amber-300 text-stone-950 rounded-lg transition font-bold shadow-xs whitespace-nowrap"
-              title="Copy published link to share with other teachers"
+              title="Share published link with other teachers"
             >
               🔗 Share App Link
             </button>

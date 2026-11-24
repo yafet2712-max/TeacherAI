@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, Sparkles, User, Bot, Loader2, Volume2, Copy, Check } from 'lucide-react';
 import { playAmharicAudio } from '../utils/audio';
+import { copyTextSafe } from '../utils/clipboard';
 
 interface Message {
   role: 'user' | 'model';
@@ -75,10 +76,12 @@ export const EducatorChat: React.FC<{ onOpenKeyboard: () => void }> = ({ onOpenK
     }
   };
 
-  const handleCopy = (content: string, idx: number) => {
-    navigator.clipboard.writeText(content);
-    setCopiedIdx(idx);
-    setTimeout(() => setCopiedIdx(null), 2000);
+  const handleCopy = async (content: string, idx: number) => {
+    const ok = await copyTextSafe(content);
+    if (ok) {
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx(null), 2000);
+    }
   };
 
   const handleAudio = (content: string, idx: number) => {

@@ -3,6 +3,7 @@ import { Bookmark, Search, Trash2, Printer, Copy, Check, FileText, BookOpen, Boo
 import { SavedMaterial } from '../types';
 import { DailyLessonPlanView } from './DailyLessonPlanView';
 import { exportLessonPlanToDocx, exportTextOrQuizToDocx } from '../utils/docxExport';
+import { copyTextSafe } from '../utils/clipboard';
 
 interface SavedLibraryProps {
   items: SavedMaterial[];
@@ -45,10 +46,12 @@ export const SavedLibrary: React.FC<SavedLibraryProps> = ({ items, onDeleteItem,
     }
   };
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async (text: string) => {
+    const ok = await copyTextSafe(text);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handlePrint = () => {

@@ -44,6 +44,7 @@ export interface DailyLessonPlanData {
   rationale: string;
   prerequisiteKnowledge: string;
   competencies: string;
+  mainIdeas?: string[];
   stages: LessonPlanStageRow[];
   specialNeedsSupport: {
     slowLearners: string;
@@ -89,6 +90,7 @@ export interface FiveDaysPlanData {
   weekRangeOrDates: string;
   generalCompetencies: string;
   rationale: string;
+  mainIdeas?: string[];
   days: DayPlanItem[];
   specialNeedsSupport: {
     slowLearners: string;

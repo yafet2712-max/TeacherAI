@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { FiveDaysPlanData, DayPlanItem, LessonPlanStageRow } from '../types';
-import { Printer, Copy, Check, Bookmark, Edit3, Eye, Download, Calendar, Layers } from 'lucide-react';
+import { Printer, Copy, Check, Bookmark, Edit3, Eye, Download, Calendar, Layers, Lightbulb, Plus, Trash2 } from 'lucide-react';
 import { exportFiveDaysPlanToDocx } from '../utils/docxExport';
+import { copyTextSafe } from '../utils/clipboard';
 
 interface FiveDaysPlanViewProps {
   plan: FiveDaysPlanData;
@@ -10,6 +11,17 @@ interface FiveDaysPlanViewProps {
   isSaved?: boolean;
   onConvertToDailyPlan?: (day: DayPlanItem) => void;
 }
+
+const BlankLine: React.FC<{ wide?: boolean }> = ({ wide }) => (
+  <span
+    aria-hidden="true"
+    className={`inline-block border-b border-stone-400 align-bottom ${
+      wide ? 'w-44 sm:w-64 max-w-full' : 'w-28 sm:w-40 max-w-full'
+    }`}
+  >
+    &nbsp;
+  </span>
+);
 
 // Normalizes day stages into the exact 3-row, 9-column Ethiopian MoE format
 function getDayStages(day: DayPlanItem, isAmharic: boolean, isOromic?: boolean): LessonPlanStageRow[] {
@@ -162,13 +174,70 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
     if (onUpdatePlan) onUpdatePlan(updated);
   };
 
-  const handleCopyText = () => {
-    let text = `${isOromic ? 'KAROORA BARNOOTA GUYYAA SHANII (5 DAYS LESSON PLAN)' : isAmharic ? 'የ5 ቀናት ሳምንታዊ የትምህርት እቅድ (5 DAYS LESSON PLAN)' : '5-DAYS LESSON PLAN'}\n\n`;
+  const handleMainIdeaChange = (idx: number, value: string) => {
+    const current = Array.isArray(plan.mainIdeas) ? [...plan.mainIdeas] : [];
+    current[idx] = value;
+    handleFieldChange('mainIdeas', current);
+  };
+
+  const handleAddMainIdea = () => {
+    const current = Array.isArray(plan.mainIdeas) ? [...plan.mainIdeas] : [];
+    handleFieldChange('mainIdeas', [...current, '']);
+  };
+
+  const handleRemoveMainIdea = (idx: number) => {
+    const current = Array.isArray(plan.mainIdeas) ? [...plan.mainIdeas] : [];
+    handleFieldChange(
+      'mainIdeas',
+      current.filter((_, i) => i !== idx)
+    );
+  };
+
+  const handleAddDay = () => {
+    const nextNum = plan.days.length + 1;
+    const newDay: DayPlanItem = {
+      dayNumber: nextNum,
+      dayName: isOromic ? `Guyyaa ${nextNum}` : isAmharic ? `ቀን ${nextNum}` : `Day ${nextNum}`,
+      date: '',
+      lessonTopic: '',
+      subTopic: '',
+      competencies: plan.generalCompetencies || '',
+      starterActivities: '',
+      mainActivities: '',
+      concludingActivities: '',
+      assessmentTechniques: '',
+      teachingAids: '',
+      homework: '',
+      remarks: '-',
+    };
+    const updated = { ...plan, days: [...plan.days, newDay] };
+    setPlan(updated);
+    if (onUpdatePlan) onUpdatePlan(updated);
+    setActiveDayIndex(updated.days.length - 1);
+  };
+
+  const handleRemoveDay = (dayIdx: number) => {
+    if (plan.days.length <= 1) return;
+    const updatedDays = plan.days.filter((_, idx) => idx !== dayIdx);
+    const updated = { ...plan, days: updatedDays };
+    setPlan(updated);
+    if (onUpdatePlan) onUpdatePlan(updated);
+    setActiveDayIndex((prev) =>
+      prev === 'all' ? 'all' : Math.min(prev, Math.max(0, updatedDays.length - 1))
+    );
+  };
+
+  const handleCopyText = async () => {
+    let text = `${isOromic ? 'KAROORA BARNOOTA TORBEE (WEEKLY LESSON PLAN)' : isAmharic ? 'ሳምንታዊ የትምህርት እቅድ (WEEKLY LESSON PLAN)' : 'WEEKLY LESSON PLAN'} (Landscape Format)\n\n`;
     text += `Teacher: ${plan.teacherName}    School: ${plan.schoolName}\n`;
     text += `Subject: ${plan.subject}    Unit and topic: ${plan.unitAndTopic}\n`;
-    text += `Grade & Section: ${plan.gradeAndSection}    Week: ${plan.weekRangeOrDates}\n\n`;
+    text += `Grade & Section: ${plan.gradeAndSection}    Week: ${plan.weekRangeOrDates}\n`;
+    if (Array.isArray(plan.mainIdeas) && plan.mainIdeas.length > 0) {
+      text += `\nMain Ideas:\n${plan.mainIdeas.map((m) => `• ${m}`).join('\n')}\n`;
+    }
+    text += `\n`;
 
-    plan.days.forEach((day, idx) => {
+    plan.days.forEach((day) => {
       const stages = getDayStages(day, isAmharic, isOromic);
       text += `==========================================================\n`;
       text += `${day.dayName} - ${day.lessonTopic || day.subTopic || ''}\n`;
@@ -181,9 +250,11 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
       text += `\n`;
     });
 
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const ok = await copyTextSafe(text);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const daysToRender =
@@ -191,8 +262,26 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
       ? plan.days.map((d, i) => ({ day: d, index: i }))
       : [{ day: plan.days[activeDayIndex] || plan.days[0], index: typeof activeDayIndex === 'number' ? activeDayIndex : 0 }];
 
+  const hasContent = Boolean(plan.unitAndTopic || plan.generalCompetencies || plan.days.some((d) => d.lessonTopic || d.subTopic));
+  const effectiveMainIdeas: string[] =
+    Array.isArray(plan.mainIdeas) && plan.mainIdeas.length > 0
+      ? plan.mainIdeas
+      : hasContent
+      ? [
+          plan.rationale,
+          ...plan.days
+            .map((d) => {
+              const t = d.lessonTopic || d.subTopic;
+              return t ? `${d.dayName}: ${t}` : '';
+            })
+            .filter(Boolean),
+        ]
+          .filter((v): v is string => Boolean(v && v.trim()))
+          .slice(0, 6)
+      : [];
+
   return (
-    <div className="bg-white rounded-3xl border border-stone-200 shadow-xl overflow-hidden printable-area">
+    <div className="bg-white rounded-3xl border border-stone-200 shadow-xl overflow-hidden printable-area landscape-print">
       {/* Top Actions Bar (Hidden during print) */}
       <div className="bg-stone-100/90 border-b border-stone-200 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 no-print">
         {/* Day Switcher Tabs */}
@@ -221,8 +310,22 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>{isOromic ? 'Guyyoota 5 Hunda (All 5 Days)' : isAmharic ? 'ሙሉ 5 ቀናት (All 5 Days)' : 'All 5 Days'}</span>
+            <span>{isOromic ? `Guyyoota ${plan.days.length} Hunda` : isAmharic ? `ሙሉ ${plan.days.length} ቀናት (All)` : `All ${plan.days.length} Days`}</span>
           </button>
+
+          <button
+            type="button"
+            onClick={handleAddDay}
+            className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300"
+            title="Add another day to this weekly plan"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>{isAmharic ? 'ቀን ጨምር' : 'Add Day'}</span>
+          </button>
+
+          <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-md whitespace-nowrap">
+            Landscape A4
+          </span>
         </div>
 
         {/* Action Controls */}
@@ -286,8 +389,65 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
         </div>
       </div>
 
-      {/* Official Paper Canvas: 100% exact format of Daily Lesson Plan for every single day */}
-      <div className="p-6 md:p-12 text-stone-900 font-sans text-xs sm:text-sm leading-relaxed max-w-5xl mx-auto space-y-12">
+      {/* Official Landscape Paper Canvas: 100% exact format of Daily Lesson Plan for every single day */}
+      <div className="p-4 sm:p-6 md:p-10 text-stone-900 font-sans text-xs sm:text-sm leading-relaxed max-w-[1360px] mx-auto space-y-10">
+        {/* Weekly Main Ideas Described Card */}
+        {(effectiveMainIdeas.length > 0 || isEditing) && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 print:bg-white print:border-stone-400 print:rounded-none">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2 font-bold text-emerald-950 text-xs sm:text-sm">
+                <Lightbulb className="w-4 h-4 text-amber-600 shrink-0 no-print" />
+                <span>
+                  {isOromic
+                    ? 'Yaadawwan Ijoo Torbee (Weekly Main Ideas Described)'
+                    : isAmharic
+                    ? 'የሳምንቱ ትምህርት ዋና ዋና ሃሳቦች (Weekly Main Ideas Described)'
+                    : 'Weekly Key Lesson Main Ideas Described'}
+                </span>
+              </div>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={handleAddMainIdea}
+                  className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 transition"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Idea</span>
+                </button>
+              )}
+            </div>
+
+            {isEditing ? (
+              <div className="space-y-2">
+                {(plan.mainIdeas && plan.mainIdeas.length > 0 ? plan.mainIdeas : effectiveMainIdeas).map((idea, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={idea}
+                      onChange={(e) => handleMainIdeaChange(idx, e.target.value)}
+                      className="flex-1 bg-white border border-amber-400 rounded-lg px-2.5 py-1 text-xs focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveMainIdea(idx)}
+                      className="p-1 text-rose-600 hover:bg-rose-50 rounded"
+                      title="Remove"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <ul className="list-disc pl-5 space-y-1 text-xs text-stone-800">
+                {effectiveMainIdeas.map((idea, idx) => (
+                  <li key={idx}>{idea}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         {daysToRender.map(({ day, index: dayIdx }, renderIdx) => {
           const stages = getDayStages(day, isAmharic, isOromic);
           const daySpecial = day.specialNeedsSupport || plan.specialNeedsSupport;
@@ -295,31 +455,56 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
           return (
             <div
               key={day.dayNumber || dayIdx}
-              className={renderIdx > 0 ? 'pt-10 border-t-4 border-dashed border-stone-300 print:break-before-page' : ''}
+              className={renderIdx > 0 ? 'pt-8 border-t-2 border-dashed border-stone-300 print:break-before-page' : ''}
             >
               {/* Official Centered Title Header */}
-              <div className="text-center mb-6">
-                <h1 className="text-xl sm:text-2xl font-bold italic tracking-wide text-stone-900">
-                  {isOromic
-                    ? `KAROORA BARNOOTA GUYYAA (${day.dayName.toUpperCase()})`
-                    : isAmharic
-                    ? `ዕለታዊ የትምህርት እቅድ (${day.dayName})`
-                    : `DAILY LESSON PLAN (${day.dayName.toUpperCase()})`}
-                </h1>
+              <div className="text-center mb-5 relative">
+                {isEditing && plan.days.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveDay(dayIdx)}
+                    className="no-print absolute right-0 top-0 inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg"
+                    title="Remove this day"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Remove Day</span>
+                  </button>
+                )}
+                {isEditing ? (
+                  <div className="inline-flex items-center gap-2 justify-center mb-1">
+                    <span className="text-xs font-semibold text-stone-500">Day Label:</span>
+                    <input
+                      type="text"
+                      value={day.dayName}
+                      onChange={(e) => handleDayFieldChange(dayIdx, 'dayName', e.target.value)}
+                      className="border-b border-amber-500 font-bold text-base sm:text-lg text-center px-2 py-0.5 focus:outline-none"
+                    />
+                  </div>
+                ) : (
+                  <h1 className="text-xl sm:text-2xl font-bold italic tracking-wide text-stone-900">
+                    {isOromic
+                      ? `KAROORA BARNOOTA GUYYAA (${day.dayName.toUpperCase()})`
+                      : isAmharic
+                      ? `ዕለታዊ የትምህርት እቅድ (${day.dayName})`
+                      : `DAILY LESSON PLAN (${day.dayName.toUpperCase()})`}
+                  </h1>
+                )}
                 <div className="text-xs font-semibold text-stone-500 mt-1">
                   {isOromic
-                    ? `Sirna Barnoota Oromiyaa fi Itoophiyaa • ${plan.weekRangeOrDates || 'Karoora Guyyaa'}`
+                    ? `Sirna Barnoota Oromiyaa fi Itoophiyaa • Landscape • ${plan.weekRangeOrDates || 'Karoora Guyyaa'}`
                     : isAmharic
-                    ? `የኢትዮጵያ ትምህርት ሚኒስቴር ይፋዊ የ9-ዓምድ ሰንጠረዥ • ${plan.weekRangeOrDates || 'ሳምንታዊ'}`
-                    : `Official Ministry of Education Primary 9-Column Table • ${plan.weekRangeOrDates || 'Weekly'}`}
+                    ? `የኢትዮጵያ ትምህርት ሚኒስቴር ይፋዊ የ9-ዓምድ ሰንጠረዥ (Landscape) • ${plan.weekRangeOrDates || 'ሳምንታዊ'}`
+                    : `Official Ministry of Education Primary 9-Column Table (Landscape) • ${plan.weekRangeOrDates || 'Weekly'}`}
                 </div>
               </div>
 
-              {/* Top Two-Column Information Fields (100% identical to DailyLessonPlanView) */}
-              <div className="space-y-2 mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+              {/* Top Two-Column Information Fields (Localized identically to DailyLessonPlanView) */}
+              <div className="space-y-2 mb-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
                   <div>
-                    <span className="italic font-medium">Name of teacher:- </span>
+                    <span className="italic font-medium">
+                      {isOromic ? 'Maqaa Barsiisaa:- ' : isAmharic ? 'የመምህሩ ስም:- ' : 'Name of teacher:- '}
+                    </span>
                     {isEditing ? (
                       <input
                         type="text"
@@ -328,12 +513,14 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         className="border-b border-amber-500 font-semibold px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                       />
                     ) : (
-                      <span className="font-semibold">{plan.teacherName || '________________________'}</span>
+                      <span className="font-semibold">{plan.teacherName || <BlankLine />}</span>
                     )}
                   </div>
 
                   <div>
-                    <span className="italic font-medium">Name of School:- </span>
+                    <span className="italic font-medium">
+                      {isOromic ? 'Maqaa Mana Barumsaa:- ' : isAmharic ? 'የማስተማሪያ ት/ቤት ስም:- ' : 'Name of School:- '}
+                    </span>
                     {isEditing ? (
                       <input
                         type="text"
@@ -342,14 +529,16 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         className="border-b border-amber-500 font-semibold px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                       />
                     ) : (
-                      <span className="font-semibold uppercase">{plan.schoolName || '________________________________'}</span>
+                      <span className="font-semibold uppercase">{plan.schoolName || <BlankLine wide />}</span>
                     )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
                   <div>
-                    <span className="italic font-medium">Subject:- </span>
+                    <span className="italic font-medium">
+                      {isOromic ? 'Gosa Barnootaa:- ' : isAmharic ? 'የትምህርት ዓይነት:- ' : 'Subject:- '}
+                    </span>
                     {isEditing ? (
                       <input
                         type="text"
@@ -358,12 +547,14 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-48 focus:outline-none"
                       />
                     ) : (
-                      <span>{plan.subject || '____________________'}</span>
+                      <span>{plan.subject || <BlankLine />}</span>
                     )}
                   </div>
 
                   <div>
-                    <span className="italic font-medium">Unit and topic:- </span>
+                    <span className="italic font-medium">
+                      {isOromic ? 'Boqonnaa fi Mata Duree:- ' : isAmharic ? 'ምዕራፍ እና ርዕስ:- ' : 'Unit and topic:- '}
+                    </span>
                     {isEditing ? (
                       <input
                         type="text"
@@ -372,14 +563,16 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                       />
                     ) : (
-                      <span>{plan.unitAndTopic || '________________________'}</span>
+                      <span>{plan.unitAndTopic || <BlankLine wide />}</span>
                     )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
                   <div>
-                    <span className="italic font-medium">Grade and Section:- </span>
+                    <span className="italic font-medium">
+                      {isOromic ? 'Kutaa fi Sekshinii:- ' : isAmharic ? 'ክፍል እና ሴክሽን:- ' : 'Grade and Section:- '}
+                    </span>
                     {isEditing ? (
                       <input
                         type="text"
@@ -388,12 +581,14 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-40 focus:outline-none"
                       />
                     ) : (
-                      <span>{plan.gradeAndSection || '____________'}</span>
+                      <span>{plan.gradeAndSection || <BlankLine />}</span>
                     )}
                   </div>
 
                   <div>
-                    <span className="italic font-medium">Lesson topic:- </span>
+                    <span className="italic font-medium">
+                      {isOromic ? 'Mata Duree Xiqqaa:- ' : isAmharic ? 'ንዑስ ርዕስ (የክፍለ-ጊዜው ርዕስ):- ' : 'Lesson topic:- '}
+                    </span>
                     {isEditing ? (
                       <input
                         type="text"
@@ -402,13 +597,15 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-60 focus:outline-none font-semibold text-amber-900"
                       />
                     ) : (
-                      <span className="font-semibold text-amber-900">{day.lessonTopic || day.subTopic || '________________________'}</span>
+                      <span className="font-semibold text-amber-900">{day.lessonTopic || day.subTopic || <BlankLine wide />}</span>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <span className="italic font-medium">Date:- </span>
+                  <span className="italic font-medium">
+                    {isOromic ? 'Guyyaa:- ' : isAmharic ? 'ቀን:- ' : 'Date:- '}
+                  </span>
                   {isEditing ? (
                     <input
                       type="text"
@@ -417,13 +614,15 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                       className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-64 focus:outline-none"
                     />
                   ) : (
-                    <span>{day.date || day.dayName || '____________________'}</span>
+                    <span>{day.date || day.dayName || <BlankLine wide />}</span>
                   )}
                 </div>
 
                 <div className="pt-2 space-y-1">
                   <p>
-                    <span className="italic font-medium">Rationale of the topic:- </span>
+                    <span className="italic font-medium">
+                      {isOromic ? 'Kaayyoo/Sababii Barichaa:- ' : isAmharic ? 'የትምህርቱ አስፈላጊነት (Rationale):- ' : 'Rationale of the topic:- '}
+                    </span>
                     {isEditing ? (
                       <textarea
                         rows={2}
@@ -432,12 +631,14 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         className="w-full border border-amber-400 p-1 rounded focus:outline-none"
                       />
                     ) : (
-                      <span>{day.rationale || plan.rationale || '________________________________________________________________'}</span>
+                      <span>{day.rationale || plan.rationale || <BlankLine wide />}</span>
                     )}
                   </p>
 
                   <p>
-                    <span className="italic font-medium">Pre-requisite knowledge:- </span>
+                    <span className="italic font-medium">
+                      {isOromic ? 'Beekumsa Duraan Qaban:- ' : isAmharic ? 'ቀድሞ የነበረ እውቀት (Pre-requisite):- ' : 'Pre-requisite knowledge:- '}
+                    </span>
                     {isEditing ? (
                       <textarea
                         rows={2}
@@ -446,12 +647,14 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         className="w-full border border-amber-400 p-1 rounded focus:outline-none"
                       />
                     ) : (
-                      <span>{day.prerequisiteKnowledge || day.starterActivities || '________________________________________________________________'}</span>
+                      <span>{day.prerequisiteKnowledge || day.starterActivities || <BlankLine wide />}</span>
                     )}
                   </p>
 
                   <p>
-                    <span className="italic font-medium">Competencies (Learning objectives):- </span>
+                    <span className="italic font-medium">
+                      {isOromic ? 'Bu\'aalee Barachuu (Competencies):- ' : isAmharic ? 'የመማር ማስተማር ዓላማዎች (Competencies):- ' : 'Competencies (Learning objectives):- '}
+                    </span>
                     {isEditing ? (
                       <textarea
                         rows={2}
@@ -460,7 +663,7 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         className="w-full border border-amber-400 p-1 rounded focus:outline-none font-semibold text-emerald-900"
                       />
                     ) : (
-                      <span className="font-semibold text-emerald-950">{day.competencies || plan.generalCompetencies || '________________________________________________________________'}</span>
+                      <span className="font-semibold text-emerald-950">{day.competencies || plan.generalCompetencies || <BlankLine wide />}</span>
                     )}
                   </p>
                 </div>
@@ -719,12 +922,13 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         <span className="font-medium">
                           {isOromic ? 'Maqaa Barsiisaa:- ' : isAmharic ? 'የመምህሩ ስም:- ' : "Teacher's Name:- "}
                         </span>
-                        <span className="font-bold">{plan.teacherName || '________________________'}</span>
+                        <span className="font-bold">{plan.teacherName || <BlankLine />}</span>
                       </td>
                       <td className="p-2 w-1/2">
                         <span className="font-medium">
-                          {isOromic ? 'Mallattoo:- ________________________' : isAmharic ? 'ፊርማ:- ________________________' : 'Signature:- ________________________'}
+                          {isOromic ? 'Mallattoo:- ' : isAmharic ? 'ፊርማ:- ' : 'Signature:- '}
                         </span>
+                        <BlankLine />
                       </td>
                     </tr>
 
@@ -742,13 +946,14 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                             className="border-b border-amber-500 px-1 w-48 focus:outline-none"
                           />
                         ) : (
-                          <span>{plan.deptHeadName || '________________________'}</span>
+                          <span>{plan.deptHeadName || <BlankLine />}</span>
                         )}
                       </td>
                       <td className="p-2 w-1/2">
                         <span className="font-medium">
-                          {isOromic ? 'Mallattoo:- ________________________' : isAmharic ? 'ፊርማ:- ________________________' : 'Signature:- ________________________'}
+                          {isOromic ? 'Mallattoo:- ' : isAmharic ? 'ፊርማ:- ' : 'Signature:- '}
                         </span>
+                        <BlankLine />
                       </td>
                     </tr>
 
@@ -766,13 +971,14 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                             className="border-b border-amber-500 px-1 w-48 focus:outline-none"
                           />
                         ) : (
-                          <span>{plan.vicePrincipalName || '________________________'}</span>
+                          <span>{plan.vicePrincipalName || <BlankLine />}</span>
                         )}
                       </td>
                       <td className="p-2 w-1/2">
                         <span className="font-medium">
-                          {isOromic ? 'Mallattoo:- ________________________' : isAmharic ? 'ፊርማ:- ________________________' : 'Signature:- ________________________'}
+                          {isOromic ? 'Mallattoo:- ' : isAmharic ? 'ፊርማ:- ' : 'Signature:- '}
                         </span>
+                        <BlankLine />
                       </td>
                     </tr>
 

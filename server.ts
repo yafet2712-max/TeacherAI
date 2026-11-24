@@ -129,10 +129,18 @@ app.post('/api/generate-lesson-plan', async (req: Request, res: Response) => {
       customNotes,
       schoolProfile,
       customDate,
+      teacherNameOverride,
+      dayName,
     } = req.body;
 
     const schoolName = schoolProfile?.schoolName || schoolProfile?.amharicSchoolName || '';
-    const teacherName = schoolProfile?.teacherName || '';
+    const teacherName =
+      typeof teacherNameOverride === 'string' && teacherNameOverride.trim()
+        ? teacherNameOverride.trim()
+        : schoolProfile?.teacherName || '';
+    const effectiveDate = dayName && customDate && !String(customDate).includes(dayName)
+      ? `${customDate} (${dayName})`
+      : customDate || dayName || '';
 
     const effectiveLanguage = resolveCurriculumLanguage(subject, gradeLevel, languageMode);
     const isOromic = effectiveLanguage === 'Afaan Oromoo';
@@ -192,10 +200,12 @@ Details:
 - Unit and topic: "${topic || (isOromic ? 'Boqonnaa 1' : isAmharic ? 'ምዕራፍ ፩' : 'Unit One')}"
 - Lesson topic: "${specificFocus || topic || 'Key concept and practice'}"
 - Grade and Section: "${gradeLevel || 'Grade 1'}"
-- Date: "${customDate || (isOromic ? 'Fulbaana 06, 2017 A.L.I' : isAmharic ? 'መስከረም 06 ቀን 2017 ዓ.ም' : 'Meskerem 06, 2017 E.C (Wednesday)')}"
+- Day & Date: "${effectiveDate || (isOromic ? 'Fulbaana 06, 2017 A.L.I' : isAmharic ? 'መስከረም 06 ቀን 2017 ዓ.ም' : 'Meskerem 06, 2017 E.C (Wednesday)')}"
 - Duration: "${duration || '35-40 min'}"
 - Language Mode: "${effectiveLanguage}"
 - Additional Notes: "${customNotes || ''}"
+
+Also include a "mainIdeas" array containing 3-4 concise, crystal-clear bullet points summarizing the core concepts/main ideas students will understand from this lesson (in ${effectiveLanguage}).
 
 Return a valid JSON object strictly matching this schema (do NOT include backticks or markdown if possible, just the raw JSON object):
 ${isOromic ? `{
@@ -204,11 +214,16 @@ ${isOromic ? `{
   "subject": "${subject || 'Barnoota Afaan Oromoo'}",
   "unitAndTopic": "Boqonnaa ... - ...",
   "gradeAndSection": "${gradeLevel || 'Kutaa 1ffaa'}",
-  "lessonTopic": "${topic || 'Mata Duree Barnootaa'}",
-  "date": "${customDate || 'Fulbaana 06, 2017 A.L.I'}",
+  "lessonTopic": "${specificFocus || topic || 'Mata Duree Barnootaa'}",
+  "date": "${effectiveDate || 'Fulbaana 06, 2017 A.L.I'}",
   "rationale": "Barnoonni kun barattoonni ... akka hubataniif gargaara.",
   "prerequisiteKnowledge": "Barattoonni kanaan dura ... barataniiru.",
   "competencies": "Dhuma barnoota kanaatti barattoonni: 1. ... 2. ... danda'u.",
+  "mainIdeas": [
+    "Yaada ijoo 1ffaa waa'ee mata duree kanaa",
+    "Yaada ijoo 2ffaa fi fakkeenya qabatamaa",
+    "Yaada ijoo 3ffaa hojii irra oolmaa jireenya keessatti"
+  ],
   "stages": [
     {
       "stage": "Starter (Qophii fi Yaada Ka'umsaa)",
@@ -258,11 +273,16 @@ ${isOromic ? `{
   "subject": "${subject || 'ሒሳብ / ሳይንስ'}",
   "unitAndTopic": "ምዕራፍ ... - ...",
   "gradeAndSection": "${gradeLevel || '1ኛ ክፍል'}",
-  "lessonTopic": "${topic || 'የትምህርቱ ርዕስ'}",
-  "date": "${customDate || 'መስከረም 06 ቀን 2017 ዓ.ም'}",
+  "lessonTopic": "${specificFocus || topic || 'የትምህርቱ ርዕስ'}",
+  "date": "${effectiveDate || 'መስከረም 06 ቀን 2017 ዓ.ም'}",
   "rationale": "ትምህርቱ ተማሪዎች ... እንዲረዱ ያግዛል።",
   "prerequisiteKnowledge": "ተማሪዎች ቀደም ሲል ... ተምረዋል።",
   "competencies": "ተማሪዎች ይህንን ትምህርት ካጠናቀቁ በኋላ: 1. ... 2. ... ይችላሉ።",
+  "mainIdeas": [
+    "የትምህርቱ ዋና ሃሳብ 1",
+    "የትምህርቱ ዋና ሃሳብ 2",
+    "የትምህርቱ ዋና ሃሳብ 3"
+  ],
   "stages": [
     {
       "stage": "Starter (ማነሳሳትና መከለስ)",
@@ -312,11 +332,16 @@ ${isOromic ? `{
   "subject": "${subject || 'English'}",
   "unitAndTopic": "Unit ... - ...",
   "gradeAndSection": "${gradeLevel || 'Grade 7'}",
-  "lessonTopic": "${topic || 'Specific topic'}",
-  "date": "${customDate || 'Meskerem 06, 2017 E.C (Wednesday)'}",
+  "lessonTopic": "${specificFocus || topic || 'Specific topic'}",
+  "date": "${effectiveDate || 'Meskerem 06, 2017 E.C (Wednesday)'}",
   "rationale": "The lesson helps learners understand...",
   "prerequisiteKnowledge": "Students have previously learned...",
   "competencies": "At the end of the lesson, the students will be able to: 1. ... 2. ...",
+  "mainIdeas": [
+    "Core concept or definition students must grasp",
+    "Key practical example or skill demonstrated",
+    "Real-life application and takeaway"
+  ],
   "stages": [
     {
       "stage": "Starter (Motivation & Introduction)",
@@ -548,6 +573,20 @@ ${isOromic ? `{
       }
     }
 
+    if (planData) {
+      if (teacherName) planData.teacherName = teacherName;
+      if (schoolName && !planData.schoolName) planData.schoolName = schoolName;
+      if (effectiveDate && !planData.date) planData.date = effectiveDate;
+      if (!Array.isArray(planData.mainIdeas) || planData.mainIdeas.length === 0) {
+        const derivedIdeas = [
+          planData.rationale,
+          planData.competencies,
+          ...(Array.isArray(planData.stages) ? planData.stages.map((s: any) => s?.learningContents).filter(Boolean) : []),
+        ].filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+        planData.mainIdeas = derivedIdeas.slice(0, 4);
+      }
+    }
+
     res.json({
       plan: planData,
       content: rawResponse,
@@ -569,10 +608,36 @@ app.post('/api/generate-5-days-plan', async (req: Request, res: Response) => {
       customNotes,
       schoolProfile,
       weekRangeOrDates,
+      teacherNameOverride,
+      customDays,
     } = req.body;
 
     const schoolName = schoolProfile?.schoolName || schoolProfile?.amharicSchoolName || '';
-    const teacherName = schoolProfile?.teacherName || '';
+    const teacherName =
+      typeof teacherNameOverride === 'string' && teacherNameOverride.trim()
+        ? teacherNameOverride.trim()
+        : schoolProfile?.teacherName || '';
+
+    const normalizedCustomDays = Array.isArray(customDays)
+      ? customDays
+          .filter((d: any) => d && typeof d === 'object')
+          .map((d: any, i: number) => ({
+            dayNumber: typeof d.dayNumber === 'number' ? d.dayNumber : i + 1,
+            dayName: typeof d.dayName === 'string' ? d.dayName.trim() : '',
+            date: typeof d.date === 'string' ? d.date.trim() : '',
+            lessonTopic: typeof d.lessonTopic === 'string' ? d.lessonTopic.trim() : '',
+          }))
+      : [];
+
+    const customDaysPromptSection =
+      normalizedCustomDays.length > 0
+        ? `\nTEACHER-SPECIFIED SCHEDULE (YOU MUST PRESERVE THESE EXACT DAYS, DATES, AND LESSON TOPICS):\n${normalizedCustomDays
+            .map(
+              (d, i) =>
+                `- Day ${d.dayNumber || i + 1}: dayName="${d.dayName || `Day ${i + 1}`}", date="${d.date || ''}", lessonTopic="${d.lessonTopic || topic || ''}"`
+            )
+            .join('\n')}\nMake sure "days" has ${normalizedCustomDays.length} items using these exact dayName, date, and lessonTopic values!`
+        : '';
 
     const effectiveLanguage = resolveCurriculumLanguage(subject, gradeLevel, languageMode);
     const isOromic = effectiveLanguage === 'Afaan Oromoo';
@@ -581,27 +646,27 @@ app.post('/api/generate-5-days-plan', async (req: Request, res: Response) => {
     let weeklyLanguageInstructions = '';
     if (isOromic) {
       weeklyLanguageInstructions = `[AFAAN OROMOO (OROMIC) MEDIUM INSTRUCTION - ETHIOPIAN / OROMIA REGIONAL CURRICULUM]:
-All pedagogical content for all 5 days MUST BE GENERATED IN NATURAL, ACCURATE AFAAN OROMOO (using Qubee Afaan Oromoo script).
+All pedagogical content for all days MUST BE GENERATED IN NATURAL, ACCURATE AFAAN OROMOO (using Qubee Afaan Oromoo script).
 Days sequence in Afaan Oromoo:
 - Day 1: Guyyaa 1 (Wiixata) - Seensa, yaada bu'uuraa fi jechoota haaraa
 - Day 2: Kibxata - Ibsa qabatamaa, fakkeenyota fi hirmaannaa barattootaa
 - Day 3: Roobii - Hojii garee, shaakala waloofi marii daree
 - Day 4: Kamisa - Hojii dhuunfaa, shaakala dabalataafi qajeelcha
 - Day 5: Jimaata - Cuunfaa torbee, madaallii fi qormaata gabaabaa
-All subTopic, competencies, starterActivities, mainActivities, concludingActivities, assessmentTechniques, teachingAids, homework, and specialNeedsSupport MUST BE IN AFAAN OROMOO.`;
+All subTopic, lessonTopic, competencies, starterActivities, mainActivities, concludingActivities, assessmentTechniques, teachingAids, homework, mainIdeas, and specialNeedsSupport MUST BE IN AFAAN OROMOO.`;
     } else if (isAmharic) {
       weeklyLanguageInstructions = `[AMHARIC MEDIUM INSTRUCTION - GRADES 1-6 (Or Amharic Subject)]:
-All pedagogical content for all 5 days MUST BE IN NATURAL, RICH AMHARIC SCRIPT (በግዕዝ ፊደላትና በአማርኛ ቋንቋ).
+All pedagogical content for all days MUST BE IN NATURAL, RICH AMHARIC SCRIPT (በግዕዝ ፊደላትና በአማርኛ ቋንቋ).
 Days sequence:
 Day 1: ሰኞ (መግቢያ፣ መሰረታዊ ጽንሰ-ሀሳብና ቃላት)
 Day 2: ማክሰኞ (ጽንሰ-ሀሳብ ማዳበርና ምሳሌዎችን መስራት)
 Day 3: ረቡዕ (የቡድን ስራ፣ የጋራ ልምምድና ውይይት)
 Day 4: ሐሙስ (የግል ስራ፣ የተግባር ልምምድና ማጠናከሪያ)
 Day 5: አርብ (የትምህርቱ ማጠቃለያ፣ ክለሳ፣ የሳምንቱ አጭር ምዘና/ፈተና)
-All subTopic, competencies, starterActivities, mainActivities, concludingActivities, assessmentTechniques, teachingAids, homework, and specialNeedsSupport MUST BE IN AMHARIC.`;
+All subTopic, lessonTopic, competencies, starterActivities, mainActivities, concludingActivities, assessmentTechniques, teachingAids, homework, mainIdeas, and specialNeedsSupport MUST BE IN AMHARIC.`;
     } else {
       weeklyLanguageInstructions = `[ENGLISH MEDIUM INSTRUCTION - GRADES 7 & 8 (Or English Subject)]:
-All pedagogical content for all 5 days MUST BE IN CLEAR, PROFESSIONAL PEDAGOGICAL ENGLISH.
+All pedagogical content for all days MUST BE IN CLEAR, PROFESSIONAL PEDAGOGICAL ENGLISH.
 Days sequence:
 Day 1: Monday (Introduction, vocabulary, and foundation)
 Day 2: Tuesday (Concept modeling, guided instruction, and examples)
@@ -611,7 +676,7 @@ Day 5: Friday (Weekly synthesis, review, and formative assessment/quiz)
 All fields in English.`;
     }
 
-    const prompt = `You must generate a comprehensive 5-Day Weekly Lesson Plan for an Ethiopian Primary School teacher following the Ethiopian Ministry of Education curriculum.
+    const prompt = `You must generate a comprehensive Weekly Lesson Plan for an Ethiopian Primary School teacher following the Ethiopian Ministry of Education curriculum.
 
 CRITICAL ETHIOPIAN CURRICULUM LANGUAGE POLICY:
 Subject: "${subject || 'General'}"
@@ -626,7 +691,9 @@ Details:
 - Unit & Topic: "${topic || (isOromic ? 'Boqonnaa 1' : isAmharic ? 'ምዕራፍ ፩' : 'Unit Topic')}"
 - Grade Level: "${gradeLevel || 'Grade 1'}"
 - Week / Dates: "${weekRangeOrDates || (isOromic ? 'Torbee 1 (Wiixata hanga Jimaata)' : isAmharic ? 'ሳምንት ፩ (ከሰኞ እስከ አርብ)' : 'Week 1 (Monday to Friday)')}"
-- Teacher's Custom Notes: "${customNotes || ''}"
+- Teacher's Custom Notes: "${customNotes || ''}"${customDaysPromptSection}
+
+Also include a "mainIdeas" array of 4-5 concise bullet points summarizing the core learning ideas for the entire week in ${effectiveLanguage}.
 
 Return a valid JSON object strictly matching this schema:
 ${isOromic ? `{
@@ -951,6 +1018,46 @@ ${isOromic ? `{
         deptHeadName: '',
         vicePrincipalName: '',
       };
+    }
+
+    if (planData) {
+      if (teacherName) planData.teacherName = teacherName;
+      if (schoolName && !planData.schoolName) planData.schoolName = schoolName;
+
+      if (normalizedCustomDays.length > 0 && Array.isArray(planData.days)) {
+        planData.days = normalizedCustomDays.map((customDay, idx) => {
+          const generatedDay = planData.days[idx] || {};
+          return {
+            ...generatedDay,
+            dayNumber: customDay.dayNumber || idx + 1,
+            dayName: customDay.dayName || generatedDay.dayName || `Day ${idx + 1}`,
+            date: customDay.date || generatedDay.date || '',
+            lessonTopic: customDay.lessonTopic || generatedDay.lessonTopic || generatedDay.subTopic || topic || '',
+            subTopic: customDay.lessonTopic || generatedDay.subTopic || generatedDay.lessonTopic || topic || '',
+            competencies:
+              generatedDay.competencies ||
+              planData.generalCompetencies ||
+              (isAmharic ? 'ተማሪዎች የዕለቱን ዋና ነጥቦች ይረዳሉ።' : 'Students master today’s key concepts.'),
+          };
+        });
+      }
+
+      if (!Array.isArray(planData.mainIdeas) || planData.mainIdeas.length === 0) {
+        const daySummaries = Array.isArray(planData.days)
+          ? planData.days
+              .map((d: any) => {
+                const title = d?.lessonTopic || d?.subTopic;
+                return title ? `${d?.dayName || `Day ${d?.dayNumber}`}: ${title}` : null;
+              })
+              .filter(Boolean)
+          : [];
+        planData.mainIdeas = [
+          planData.rationale,
+          ...daySummaries,
+        ]
+          .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+          .slice(0, 6);
+      }
     }
 
     res.json({
@@ -1325,7 +1432,18 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.resolve(__dirname, 'dist');
-    app.use(express.static(distPath));
+    app.use(
+      express.static(distPath, {
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('sw.js') || filePath.endsWith('registerSW.js')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          } else if (filePath.endsWith('.webmanifest')) {
+            res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+            res.setHeader('Cache-Control', 'no-cache');
+          }
+        },
+      })
+    );
     app.get('*', (_req: Request, res: Response) => {
       res.sendFile(path.resolve(distPath, 'index.html'));
     });

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FIDEL_DATA, FIDEL_ORDERS } from '../data/fidelData';
 import { Volume2, Search, Printer, Sparkles, HelpCircle, Check, Copy } from 'lucide-react';
 import { playAmharicAudio } from '../utils/audio';
+import { copyTextSafe } from '../utils/clipboard';
 
 export const FidelChart: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,11 +40,13 @@ export const FidelChart: React.FC = () => {
     });
   };
 
-  const handleCopy = (char: string, e: React.MouseEvent) => {
+  const handleCopy = async (char: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(char);
-    setCopiedChar(char);
-    setTimeout(() => setCopiedChar(null), 1500);
+    const ok = await copyTextSafe(char);
+    if (ok) {
+      setCopiedChar(char);
+      setTimeout(() => setCopiedChar(null), 1500);
+    }
   };
 
   const handlePrint = () => {

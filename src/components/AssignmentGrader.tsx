@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle2, Sparkles, Copy, Check, Bookmark, Loader2, Award, AlertCircle, Download } from 'lucide-react';
 import { SavedMaterial } from '../types';
 import { exportTextOrQuizToDocx } from '../utils/docxExport';
+import { copyTextSafe } from '../utils/clipboard';
 
 interface AssignmentGraderProps {
   onSaveToLibrary: (item: Omit<SavedMaterial, 'id' | 'createdAt'>) => void;
@@ -70,11 +71,13 @@ export const AssignmentGrader: React.FC<AssignmentGraderProps> = ({ onSaveToLibr
     }
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!evaluation) return;
-    navigator.clipboard.writeText(evaluation);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const ok = await copyTextSafe(evaluation);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleSave = () => {

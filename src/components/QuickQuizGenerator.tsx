@@ -4,6 +4,7 @@ import { SchoolProfile, SavedMaterial } from '../types';
 import { ETHIOPIAN_PRIMARY_SUBJECTS, PRIMARY_GRADES, QUICK_SAMPLE_TOPICS_BY_SUBJECT } from '../data/subjects';
 import { exportTextOrQuizToDocx } from '../utils/docxExport';
 import { getEthiopianCurriculumLanguage } from '../utils/curriculumLanguage';
+import { copyTextSafe } from '../utils/clipboard';
 
 interface QuickQuizGeneratorProps {
   schoolProfile: SchoolProfile;
@@ -85,11 +86,13 @@ export const QuickQuizGenerator: React.FC<QuickQuizGeneratorProps> = ({
     }
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!quizContent) return;
-    navigator.clipboard.writeText(quizContent);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const ok = await copyTextSafe(quizContent);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleSave = () => {
@@ -429,9 +432,21 @@ export const QuickQuizGenerator: React.FC<QuickQuizGeneratorProps> = ({
 
               {/* Student Header and Score Box */}
               <div className="mt-5 pt-3 border-t border-dashed border-stone-400 flex flex-wrap items-center justify-between text-xs text-stone-800 gap-3">
-                <div className="text-left space-y-1.5 flex-1 min-w-0 sm:min-w-[260px]">
-                  <p>Student Name (የተማሪው ስም): ________________________________________</p>
-                  <p>Grade / Section (ክፍል/ሴክሽን): ____________  Date (ቀን): __________________</p>
+                <div className="text-left space-y-2 flex-1 min-w-0 sm:min-w-[260px]">
+                  <p className="flex flex-wrap items-baseline gap-2">
+                    <span>Student Name (የተማሪው ስም):</span>
+                    <span className="flex-1 min-w-[140px] border-b border-stone-500 inline-block h-4" />
+                  </p>
+                  <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
+                    <span className="flex items-baseline gap-2">
+                      <span>Grade / Section (ክፍል/ሴክሽን):</span>
+                      <span className="w-24 sm:w-28 border-b border-stone-500 inline-block h-4" />
+                    </span>
+                    <span className="flex items-baseline gap-2">
+                      <span>Date (ቀን):</span>
+                      <span className="w-28 sm:w-32 border-b border-stone-500 inline-block h-4" />
+                    </span>
+                  </div>
                 </div>
                 <div className="border-2 border-stone-900 px-5 py-2.5 text-center rounded-xl bg-stone-50">
                   <span className="block text-[10px] text-stone-500 uppercase font-sans font-bold">Total Score</span>

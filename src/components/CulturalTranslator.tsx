@@ -3,6 +3,7 @@ import { Languages, Sparkles, Copy, Check, Bookmark, Loader2, Volume2, ArrowRigh
 import { playAmharicAudio } from '../utils/audio';
 import { SavedMaterial } from '../types';
 import { COMMON_PROVERBS } from '../data/fidelData';
+import { copyTextSafe } from '../utils/clipboard';
 
 interface CulturalTranslatorProps {
   onSaveToLibrary: (item: Omit<SavedMaterial, 'id' | 'createdAt'>) => void;
@@ -71,11 +72,13 @@ export const CulturalTranslator: React.FC<CulturalTranslatorProps> = ({ onSaveTo
     );
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!translationResult) return;
-    navigator.clipboard.writeText(translationResult);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const ok = await copyTextSafe(translationResult);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleSave = () => {

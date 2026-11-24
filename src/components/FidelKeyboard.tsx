@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FIDEL_DATA } from '../data/fidelData';
 import { Volume2, Copy, Check, X, ArrowLeft } from 'lucide-react';
 import { playAmharicAudio } from '../utils/audio';
+import { copyTextSafe } from '../utils/clipboard';
 
 interface FidelKeyboardProps {
   onInsertText: (char: string) => void;
@@ -46,11 +47,13 @@ export const FidelKeyboard: React.FC<FidelKeyboardProps> = ({ onInsertText, isOp
     setSelectedBase(null);
   };
 
-  const handleCopyBuffer = () => {
+  const handleCopyBuffer = async () => {
     if (!typedBuffer) return;
-    navigator.clipboard.writeText(typedBuffer);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const ok = await copyTextSafe(typedBuffer);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleSound = async (char: string, e: React.MouseEvent) => {

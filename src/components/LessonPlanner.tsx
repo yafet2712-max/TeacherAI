@@ -1,11 +1,54 @@
-import React, { useState } from 'react';
-import { BookOpen, Sparkles, Printer, Copy, Check, Bookmark, Loader2, Volume2, School, Eye, FileSpreadsheet, RefreshCw, Calendar, Layers } from 'lucide-react';
-import { playAmharicAudio } from '../utils/audio';
+import React, { useState, useRef, useEffect } from 'react';
+import { BookOpen, Sparkles, Loader2, RefreshCw, Calendar, Plus, Trash2, CheckCircle2, User } from 'lucide-react';
 import { DailyLessonPlanData, FiveDaysPlanData, DayPlanItem, SavedMaterial, SchoolProfile } from '../types';
 import { ETHIOPIAN_PRIMARY_SUBJECTS, PRIMARY_GRADES, QUICK_SAMPLE_TOPICS_BY_SUBJECT } from '../data/subjects';
 import { DailyLessonPlanView } from './DailyLessonPlanView';
 import { FiveDaysPlanView } from './FiveDaysPlanView';
 import { getEthiopianCurriculumLanguage } from '../utils/curriculumLanguage';
+
+interface ScheduleDayDraft {
+  dayNumber: number;
+  dayName: string;
+  date: string;
+  lessonTopic: string;
+}
+
+const buildDefaultSchedule = (lang: string): ScheduleDayDraft[] => {
+  if (lang === 'Afaan Oromoo') {
+    return [
+      { dayNumber: 1, dayName: 'Guyyaa 1 (Wiixata)', date: 'Fulbaana 06, 2017 A.L.I', lessonTopic: '' },
+      { dayNumber: 2, dayName: 'Guyyaa 2 (Kibxata)', date: 'Fulbaana 07, 2017 A.L.I', lessonTopic: '' },
+      { dayNumber: 3, dayName: 'Guyyaa 3 (Roobii)', date: 'Fulbaana 08, 2017 A.L.I', lessonTopic: '' },
+      { dayNumber: 4, dayName: 'Guyyaa 4 (Kamisa)', date: 'Fulbaana 09, 2017 A.L.I', lessonTopic: '' },
+      { dayNumber: 5, dayName: 'Guyyaa 5 (Jimaata)', date: 'Fulbaana 10, 2017 A.L.I', lessonTopic: '' },
+    ];
+  }
+  if (lang === 'English') {
+    return [
+      { dayNumber: 1, dayName: 'Day 1 (Monday)', date: 'Meskerem 06, 2017 E.C', lessonTopic: '' },
+      { dayNumber: 2, dayName: 'Day 2 (Tuesday)', date: 'Meskerem 07, 2017 E.C', lessonTopic: '' },
+      { dayNumber: 3, dayName: 'Day 3 (Wednesday)', date: 'Meskerem 08, 2017 E.C', lessonTopic: '' },
+      { dayNumber: 4, dayName: 'Day 4 (Thursday)', date: 'Meskerem 09, 2017 E.C', lessonTopic: '' },
+      { dayNumber: 5, dayName: 'Day 5 (Friday)', date: 'Meskerem 10, 2017 E.C', lessonTopic: '' },
+    ];
+  }
+  return [
+    { dayNumber: 1, dayName: 'ቀን 1 (ሰኞ)', date: 'መስከረም 06 ቀን 2017 ዓ.ም', lessonTopic: '' },
+    { dayNumber: 2, dayName: 'ቀን 2 (ማክሰኞ)', date: 'መስከረም 07 ቀን 2017 ዓ.ም', lessonTopic: '' },
+    { dayNumber: 3, dayName: 'ቀን 3 (ረቡዕ)', date: 'መስከረም 08 ቀን 2017 ዓ.ም', lessonTopic: '' },
+    { dayNumber: 4, dayName: 'ቀን 4 (ሐሙስ)', date: 'መስከረም 09 ቀን 2017 ዓ.ም', lessonTopic: '' },
+    { dayNumber: 5, dayName: 'ቀን 5 (አርብ)', date: 'መስከረም 10 ቀን 2017 ዓ.ም', lessonTopic: '' },
+  ];
+};
+
+const DAY_OF_WEEK_OPTIONS = [
+  { value: 'ሰኞ / Monday', labelAm: 'ሰኞ (Monday)', labelOro: 'Wiixata (Monday)' },
+  { value: 'ማክሰኞ / Tuesday', labelAm: 'ማክሰኞ (Tuesday)', labelOro: 'Kibxata (Tuesday)' },
+  { value: 'ረቡዕ / Wednesday', labelAm: 'ረቡዕ (Wednesday)', labelOro: 'Roobii (Wednesday)' },
+  { value: 'ሐሙስ / Thursday', labelAm: 'ሐሙስ (Thursday)', labelOro: 'Kamisa (Thursday)' },
+  { value: 'አርብ / Friday', labelAm: 'አርብ (Friday)', labelOro: 'Jimaata (Friday)' },
+  { value: 'ቅዳሜ / Saturday', labelAm: 'ቅዳሜ (Saturday)', labelOro: 'Sanbata (Saturday)' },
+];
 
 export const EMPTY_LESSON_PLAN: DailyLessonPlanData = {
   schoolName: '',
@@ -622,16 +665,18 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
   onRequireFiveDays,
 }) => {
   const [planMode, setPlanMode] = useState<'1-day' | '5-days'>('1-day');
+  const [teacherName, setTeacherName] = useState(schoolProfile.teacherName || '');
   const [subject, setSubject] = useState('general_science');
   const [topic, setTopic] = useState('');
   const [lessonTopic, setLessonTopic] = useState('');
   const [gradeLevel, setGradeLevel] = useState('Grade 1');
-  const [duration, setDuration] = useState('35-40 min');
+  const [duration, setDuration] = useState('35 min (5 min Starter, 25 min Main, 5 min Concluding)');
+  const [dayOfWeek, setDayOfWeek] = useState('ሰኞ / Monday');
   const [customDate, setCustomDate] = useState('መስከረም 06 ቀን 2017 ዓ.ም');
   const [weekRange, setWeekRange] = useState('ከሰኞ እስከ አርብ (Monday - Friday)');
   const [languageMode, setLanguageMode] = useState<string>('Amharic');
-  const [specificFocus, setSpecificFocus] = useState('');
   const [customNotes, setCustomNotes] = useState('');
+  const [scheduleDays, setScheduleDays] = useState<ScheduleDayDraft[]>(() => buildDefaultSchedule('Amharic'));
 
   const [loading, setLoading] = useState(false);
   const [loadingFiveDays, setLoadingFiveDays] = useState(false);
@@ -639,9 +684,17 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
   const [fiveDaysPlan, setFiveDaysPlan] = useState<FiveDaysPlanData>(EMPTY_FIVE_DAYS_PLAN);
   const [saved, setSaved] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [completionBanner, setCompletionBanner] = useState<string | null>(null);
+
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (schoolProfile.teacherName && !teacherName) {
+      setTeacherName(schoolProfile.teacherName);
+    }
+  }, [schoolProfile.teacherName]);
 
   const currentSubjectObj = ETHIOPIAN_PRIMARY_SUBJECTS.find((s) => s.id === subject);
-  const subjectPresets = QUICK_SAMPLE_TOPICS_BY_SUBJECT[subject] || [];
 
   // Ethiopian Curriculum Language Rule based on selected subject, grade and language mode
   const curriculumRule = getEthiopianCurriculumLanguage(subject, gradeLevel, languageMode);
@@ -649,6 +702,14 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
 
   const handleSelectLanguage = (lang: 'Amharic' | 'Afaan Oromoo' | 'English') => {
     setLanguageMode(lang);
+    setScheduleDays((prev) => {
+      const fresh = buildDefaultSchedule(lang);
+      return fresh.map((item, idx) => ({
+        ...item,
+        lessonTopic: prev[idx]?.lessonTopic || '',
+      }));
+    });
+
     if (lang === 'Afaan Oromoo') {
       setSubject('afaan_oromoo');
       setCustomDate('Fulbaana 06, 2017 A.L.I');
@@ -671,7 +732,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
       }
     } else {
       setSubject('english');
-      setCustomDate('Meskerem 06, 2017 E.C (Wednesday)');
+      setCustomDate('Meskerem 06, 2017 E.C');
       setWeekRange('Week 1 (Monday - Friday)');
       const presets = QUICK_SAMPLE_TOPICS_BY_SUBJECT['english'];
       if (presets && presets[0]) {
@@ -680,6 +741,66 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
         setLessonTopic(presets[0].topic);
       }
     }
+  };
+
+  const handleScheduleDayChange = (idx: number, field: keyof ScheduleDayDraft, value: string) => {
+    setScheduleDays((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: value };
+      return next;
+    });
+  };
+
+  const handleAddScheduleDay = () => {
+    setScheduleDays((prev) => [
+      ...prev,
+      {
+        dayNumber: prev.length + 1,
+        dayName: isOromic ? `Guyyaa ${prev.length + 1}` : languageMode === 'Amharic' ? `ቀን ${prev.length + 1}` : `Day ${prev.length + 1}`,
+        date: '',
+        lessonTopic: '',
+      },
+    ]);
+  };
+
+  const handleRemoveScheduleDay = (idx: number) => {
+    if (scheduleDays.length <= 1) return;
+    setScheduleDays((prev) =>
+      prev
+        .filter((_, i) => i !== idx)
+        .map((d, i) => ({ ...d, dayNumber: i + 1 }))
+    );
+  };
+
+  const handleAutoFillScheduleDates = () => {
+    const firstDate = scheduleDays[0]?.date?.trim() || customDate.trim();
+    // Look for a trailing day-of-month number (e.g., "06", "12", "2026-11-24")
+    const isoMatch = firstDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      const base = new Date(`${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}T00:00:00`);
+      setScheduleDays((prev) =>
+        prev.map((d, i) => {
+          const nextDate = new Date(base);
+          nextDate.setDate(base.getDate() + i);
+          return { ...d, date: nextDate.toISOString().slice(0, 10) };
+        })
+      );
+      return;
+    }
+    const ethNumMatch = firstDate.match(/^(.*?)(\d{1,2})(.*)$/);
+    if (ethNumMatch) {
+      const prefix = ethNumMatch[1];
+      const startDay = parseInt(ethNumMatch[2], 10);
+      const suffix = ethNumMatch[3];
+      setScheduleDays((prev) =>
+        prev.map((d, i) => ({
+          ...d,
+          date: `${prefix}${String(startDay + i).padStart(2, '0')}${suffix}`,
+        }))
+      );
+      return;
+    }
+    setScheduleDays(buildDefaultSchedule(languageMode));
   };
 
 
@@ -700,6 +821,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
   const handleGenerate = async (overrideTopic?: string, overrideGrade?: string) => {
     setLoading(true);
     setErrorMessage(null);
+    setCompletionBanner(null);
     setSaved(false);
 
     const activeTopic = overrideTopic || topic;
@@ -715,21 +837,34 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
           gradeLevel: activeGrade,
           duration,
           languageMode,
-          specificFocus: lessonTopic || specificFocus,
+          specificFocus: lessonTopic || activeTopic,
           customNotes,
           schoolProfile,
           customDate,
+          dayName: dayOfWeek,
+          teacherNameOverride: teacherName.trim() || schoolProfile.teacherName || '',
         }),
       });
 
       if (!res.ok) {
-        throw new Error(`Server returned ${res.status}`);
+        const errBody = await res.json().catch(() => null);
+        throw new Error(errBody?.error || `Server returned ${res.status}`);
       }
 
       const data = await res.json();
       if (data.plan) {
         setStructuredPlan(data.plan);
         setPlanMode('1-day');
+        setCompletionBanner(
+          isOromic
+            ? '✅ Karoorri guyyaa 1 qophaa\'eera — Yaadawwan Ijoo (Main Ideas) fi gabatee Landscape armaan gaditti ilaalaa!'
+            : languageMode === 'Amharic'
+            ? '✅ ዕለታዊ የትምህርት እቅድዎ ተዘጋጅቷል — የትምህርቱ ዋና ዋና ሃሳቦች (Main Ideas) እና የLandscape ሰንጠረዥ ከዚህ በታች ቀርቧል።'
+            : '✅ Daily Lesson Plan generated in Landscape format — Key Main Ideas & 9-column MoE table are ready below.'
+        );
+        setTimeout(() => {
+          resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
       } else {
         throw new Error('No structured plan returned from AI');
       }
@@ -744,6 +879,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
   const handleGenerateFiveDays = async (overrideTopic?: string, overrideGrade?: string) => {
     setLoadingFiveDays(true);
     setErrorMessage(null);
+    setCompletionBanner(null);
     setSaved(false);
 
     const activeTopic = overrideTopic || topic;
@@ -761,17 +897,30 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
           customNotes,
           schoolProfile,
           weekRangeOrDates: weekRange,
+          teacherNameOverride: teacherName.trim() || schoolProfile.teacherName || '',
+          customDays: scheduleDays,
         }),
       });
 
       if (!res.ok) {
-        throw new Error(`Server returned ${res.status}`);
+        const errBody = await res.json().catch(() => null);
+        throw new Error(errBody?.error || `Server returned ${res.status}`);
       }
 
       const data = await res.json();
       if (data.plan) {
         setFiveDaysPlan(data.plan);
         setPlanMode('5-days');
+        setCompletionBanner(
+          isOromic
+            ? '✅ Karoorri torbee (guyyoota 5) qophaa\'eera — Yaadawwan Ijoo fi gabatee Landscape armaan gaditti ilaalaa!'
+            : languageMode === 'Amharic'
+            ? '✅ የሳምንቱ የትምህርት እቅድዎ ተዘጋጅቷል — ዋና ዋና ሃሳቦች (Main Ideas) እና የLandscape ሰንጠረዥ ከዚህ በታች ቀርቧል።'
+            : '✅ Weekly Lesson Plan generated in Landscape format — Weekly Main Ideas & daily tables are ready below.'
+        );
+        setTimeout(() => {
+          resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
       } else {
         throw new Error('No structured 5-days plan returned from AI');
       }
@@ -785,11 +934,12 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
 
   const handleLoadSample = (mode: 'Blank' | 'English' | 'Amharic' | 'Oromic' = 'Blank') => {
     setPlanMode('1-day');
+    const activeTeacher = teacherName.trim() || schoolProfile.teacherName || '';
     if (mode === 'Blank') {
       setStructuredPlan({
         ...EMPTY_LESSON_PLAN,
         schoolName: schoolProfile.schoolName || '',
-        teacherName: schoolProfile.teacherName || '',
+        teacherName: activeTeacher,
       });
       setTopic('');
       setLessonTopic('');
@@ -797,7 +947,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
       setStructuredPlan({
         ...SAMPLE_OROMIC_PLAN,
         schoolName: schoolProfile.schoolName || '',
-        teacherName: schoolProfile.teacherName || '',
+        teacherName: activeTeacher,
       });
       setSubject('afaan_oromoo');
       setTopic('Boqonnaa 3 - Maqaalee fi Ibsa Maqaa');
@@ -808,7 +958,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
       setStructuredPlan({
         ...SAMPLE_AMHARIC_PLAN,
         schoolName: schoolProfile.amharicSchoolName || schoolProfile.schoolName || '',
-        teacherName: schoolProfile.teacherName || '',
+        teacherName: activeTeacher,
       });
       setSubject('general_science');
       setTopic('ምዕራፍ ፫ - የእጽዋት ክፍሎችና ተግባራቸው');
@@ -819,7 +969,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
       setStructuredPlan({
         ...SAMPLE_IMAGE_PLAN,
         schoolName: schoolProfile.schoolName || '',
-        teacherName: schoolProfile.teacherName || '',
+        teacherName: activeTeacher,
       });
       setSubject('english');
       setTopic('Unit One - My Family');
@@ -831,18 +981,19 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
 
   const handleLoadFiveDaysSample = (mode: 'Blank' | 'English' | 'Amharic' | 'Oromic' = 'Amharic') => {
     setPlanMode('5-days');
+    const activeTeacher = teacherName.trim() || schoolProfile.teacherName || '';
     if (mode === 'Blank') {
       setFiveDaysPlan({
         ...EMPTY_FIVE_DAYS_PLAN,
         schoolName: schoolProfile.schoolName || '',
-        teacherName: schoolProfile.teacherName || '',
+        teacherName: activeTeacher,
       });
       setTopic('');
     } else if (mode === 'Oromic') {
       setFiveDaysPlan({
         ...SAMPLE_FIVE_DAYS_OROMIC,
         schoolName: schoolProfile.schoolName || '',
-        teacherName: schoolProfile.teacherName || '',
+        teacherName: activeTeacher,
       });
       setSubject('afaan_oromoo');
       setTopic('Boqonnaa 3 - Maqaalee fi Ibsa Maqaa Afaan Oromoo');
@@ -852,7 +1003,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
       setFiveDaysPlan({
         ...SAMPLE_FIVE_DAYS_AMHARIC,
         schoolName: schoolProfile.amharicSchoolName || schoolProfile.schoolName || '',
-        teacherName: schoolProfile.teacherName || '',
+        teacherName: activeTeacher,
       });
       setSubject('general_science');
       setTopic('ምዕራፍ ፫ - የእጽዋት ክፍሎችና ተግባራቸው');
@@ -862,7 +1013,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
       setFiveDaysPlan({
         ...SAMPLE_FIVE_DAYS_ENGLISH,
         schoolName: schoolProfile.schoolName || '',
-        teacherName: schoolProfile.teacherName || '',
+        teacherName: activeTeacher,
       });
       setSubject('english');
       setTopic('Unit 2 - Environmental Protection & Trees');
@@ -964,7 +1115,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
     <div className="space-y-6">
       {/* Primary Plan Mode Selector Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-stone-200/90 shadow-sm no-print">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setPlanMode('1-day')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all ${
@@ -973,32 +1124,36 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
                 : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
             }`}
           >
-            <FileSpreadsheet className="w-4 h-4" />
+            <BookOpen className="w-4 h-4" />
             <span>📄 1-Day Daily Plan (1 ቀን ዕቅድ)</span>
           </button>
 
           <button
             onClick={handleSwitchToFiveDays}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all relative ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all ${
               planMode === '5-days'
                 ? 'bg-amber-600 text-white shadow-sm'
                 : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300'
             }`}
           >
-            <Calendar className="w-4 h-4 text-amber-500" />
+            <Calendar className={`w-4 h-4 ${planMode === '5-days' ? 'text-white' : 'text-amber-600'}`} />
             <span>📅 5 Days Plan (የ5 ቀናት ሳምንታዊ ዕቅድ)</span>
-            <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider">
-              👑 Premium
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                planMode === '5-days' ? 'bg-white/20 text-white' : 'bg-amber-200/80 text-amber-950'
+              }`}
+            >
+              Mon–Fri
             </span>
           </button>
         </div>
 
         <div className="flex items-center gap-2 text-xs text-stone-500 font-medium px-2">
-          {planMode === '1-day' ? (
-            <span className="hidden sm:inline">ዕለታዊ የ9-ዓምድ ሰንጠረዥ (9-Column Daily DLP)</span>
-          ) : (
-            <span className="hidden sm:inline">ከሰኞ እስከ አርብ ሙሉ የሳምንት እቅድ (Monday–Friday 5 Days)</span>
-          )}
+          <span className="hidden sm:inline">
+            {planMode === '1-day'
+              ? 'Landscape 9-Column Daily Lesson Plan'
+              : 'Landscape Weekly Lesson Plan (Monday–Friday)'}
+          </span>
         </div>
       </div>
 
@@ -1245,8 +1400,24 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
           </div>
         </div>
 
-        {/* Form Inputs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+        {/* Teacher Name + Form Inputs */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          <div>
+            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+              {isOromic ? 'Maqaa Barsiisaa (Teacher Name)' : 'Teacher Name (የመምህሩ ስም)'}
+            </label>
+            <div className="relative">
+              <User className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={teacherName}
+                onChange={(e) => setTeacherName(e.target.value)}
+                placeholder={isOromic ? 'Maqaa keessan barreessaa...' : 'Enter teacher full name...'}
+                className="w-full pl-9 pr-3 py-2.5 text-sm bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
               {languageMode === 'Afaan Oromoo'
@@ -1259,7 +1430,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
               onChange={(e) => setTopic(e.target.value)}
               placeholder={
                 languageMode === 'Afaan Oromoo'
-                  ? 'e.g. Boqonnaa 3 - Maqaalee fi Ibsa Maqaa / Qubee fi Sagalee'
+                  ? 'e.g. Boqonnaa 3 - Maqaalee fi Ibsa Maqaa'
                   : 'e.g. Unit One - My Family / ምዕራፍ ፫ - የእጽዋት ክፍሎች'
               }
               className="w-full px-4 py-2.5 text-sm bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
@@ -1274,7 +1445,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
                   : 'Week / Date Range (ሳምንት እና ቀናት)'
                 : languageMode === 'Afaan Oromoo'
                 ? 'Lesson topic (Mata Duree Barnootaa) *'
-                : 'Lesson topic (የክፍለ-ጊዜው ንዑስ ርዕስ) *'}
+                : 'Lesson topic (የክፍለ-ጊዜው ርዕስ) *'}
             </label>
             {planMode === '5-days' ? (
               <input
@@ -1283,7 +1454,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
                 onChange={(e) => setWeekRange(e.target.value)}
                 placeholder={
                   languageMode === 'Afaan Oromoo'
-                    ? 'e.g. Fulbaana 06 - 10, 2017 A.L.I (Wiixata hanga Jimaata)'
+                    ? 'e.g. Fulbaana 06 - 10, 2017 A.L.I'
                     : 'e.g. መስከረም 06 - 10 ቀን 2017 ዓ.ም (ከሰኞ እስከ አርብ)'
                 }
                 className="w-full px-4 py-2.5 text-sm bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
@@ -1296,7 +1467,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
                 placeholder={
                   languageMode === 'Afaan Oromoo'
                     ? 'e.g. Fayyadama Ibsa Maqaa Hima Keessatti'
-                    : 'e.g. Vocabulary Practice: Class room Objects'
+                    : 'e.g. Vocabulary Practice: Classroom Objects'
                 }
                 className="w-full px-4 py-2.5 text-sm bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
               />
@@ -1304,10 +1475,10 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-              Grade and Section (ክፍልና ሴክሽን)
+              Grade & Section (ክፍልና ሴክሽን)
             </label>
             <select
               value={gradeLevel}
@@ -1322,15 +1493,34 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
             </select>
           </div>
 
+          {planMode === '1-day' && (
+            <div>
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                Day of Week (የሳምንቱ ቀን)
+              </label>
+              <select
+                value={dayOfWeek}
+                onChange={(e) => setDayOfWeek(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                {DAY_OF_WEEK_OPTIONS.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {isOromic ? d.labelOro : d.labelAm}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-              Date (ቀን - Ethiopian Calendar)
+              Date (ቀን)
             </label>
             <input
               type="text"
               value={customDate}
               onChange={(e) => setCustomDate(e.target.value)}
-              placeholder="e.g. Meskerem 06, 2017 E.C (Wednesday)"
+              placeholder="e.g. መስከረም 06 ቀን 2017 ዓ.ም"
               className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
@@ -1351,6 +1541,107 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
           </div>
         </div>
 
+        {/* 5-Days Per-Day Schedule Editor (Days, Dates & Lesson Topics) */}
+        {planMode === '5-days' && (
+          <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-stone-900">
+                  {isOromic
+                    ? '📅 Guyyootaa fi Mata Duree Barnootaa Torbee (Add Days, Dates & Topics)'
+                    : '📅 የሳምንቱ ቀናት፣ ቀን እና የትምህርት ርዕሶች (Days, Dates & Lesson Topics)'}
+                </h4>
+                <p className="text-[11px] text-stone-600">
+                  Customize each day’s label, date, and specific lesson topic before generating (or leave topic blank to auto-plan from the Unit).
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleAutoFillScheduleDates}
+                  className="px-2.5 py-1 text-[11px] font-bold bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg transition"
+                >
+                  Auto-fill Sequential Dates
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddScheduleDay}
+                  className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg transition"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Day</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {scheduleDays.map((dayRow, idx) => (
+                <div
+                  key={idx}
+                  className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-white p-2.5 rounded-xl border border-amber-200/80"
+                >
+                  <div className="sm:col-span-3">
+                    <label className="block text-[10px] font-semibold text-stone-500 mb-0.5 sm:hidden">Day</label>
+                    <input
+                      type="text"
+                      value={dayRow.dayName}
+                      onChange={(e) => handleScheduleDayChange(idx, 'dayName', e.target.value)}
+                      placeholder={`Day ${idx + 1}`}
+                      className="w-full px-2.5 py-1.5 text-xs font-bold bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div className="sm:col-span-3">
+                    <label className="block text-[10px] font-semibold text-stone-500 mb-0.5 sm:hidden">Date</label>
+                    <input
+                      type="text"
+                      value={dayRow.date}
+                      onChange={(e) => handleScheduleDayChange(idx, 'date', e.target.value)}
+                      placeholder="Date (e.g. መስከረም 06)"
+                      className="w-full px-2.5 py-1.5 text-xs bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div className="sm:col-span-5">
+                    <label className="block text-[10px] font-semibold text-stone-500 mb-0.5 sm:hidden">Lesson Topic</label>
+                    <input
+                      type="text"
+                      value={dayRow.lessonTopic}
+                      onChange={(e) => handleScheduleDayChange(idx, 'lessonTopic', e.target.value)}
+                      placeholder={`Day ${idx + 1} lesson topic (optional)...`}
+                      className="w-full px-2.5 py-1.5 text-xs bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div className="sm:col-span-1 flex justify-end">
+                    {scheduleDays.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveScheduleDay(idx)}
+                        className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                        title="Remove day"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Teacher Guidance / Custom Notes */}
+        <div>
+          <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+            Additional Teaching Notes (ተጨማሪ ማስታወሻ - Optional)
+          </label>
+          <input
+            type="text"
+            value={customNotes}
+            onChange={(e) => setCustomNotes(e.target.value)}
+            placeholder="e.g. Focus on group discussion, textbook pages 12–15, or lab demonstration..."
+            className="w-full px-4 py-2 text-xs sm:text-sm bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+        </div>
+
         {errorMessage && (
           <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs">
             {errorMessage}
@@ -1359,8 +1650,17 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
 
         {/* Action Buttons: Both Daily DLP & 5-Days Plan Buttons clearly available! */}
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="text-xs text-stone-500 self-start sm:self-center">
-            Workplace: <strong>{schoolProfile.schoolName || 'Primary School'}</strong> • Teacher: <strong>{schoolProfile.teacherName || 'Teacher'}</strong>
+          <div className="text-xs text-stone-500 self-start sm:self-center flex flex-wrap items-center gap-2">
+            <span>Workplace: <strong>{schoolProfile.schoolName || 'Primary School'}</strong></span>
+            <span>•</span>
+            <span>Teacher: <strong>{teacherName || 'Teacher'}</strong></span>
+            <button
+              type="button"
+              onClick={onOpenKeyboard}
+              className="ml-1 px-2 py-0.5 text-[11px] font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg border border-stone-300"
+            >
+              ⌨️ Fidel Pad
+            </button>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 self-stretch sm:self-auto">
@@ -1439,25 +1739,44 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
         </div>
       </div>
 
-      {/* Render Selected Plan Document: Either 5-Days View or 1-Day Daily DLP View */}
-      {planMode === '5-days' ? (
-        <FiveDaysPlanView
-          plan={fiveDaysPlan}
-          onUpdatePlan={(updated) => setFiveDaysPlan(updated)}
-          onSave={handleSaveFiveDays}
-          isSaved={saved}
-          onConvertToDailyPlan={handleConvertDayToDailyPlan}
-        />
-      ) : (
-        structuredPlan && (
-          <DailyLessonPlanView
-            plan={structuredPlan}
-            onUpdatePlan={(updated) => setStructuredPlan(updated)}
-            onSave={handleSave}
+      {/* Generated Output Container + Auto-Scroll Anchor */}
+      <div ref={resultRef} className="space-y-4">
+        {completionBanner && (
+          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 no-print">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{completionBanner}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCompletionBanner(null)}
+              className="text-xs text-emerald-700 hover:text-emerald-900 font-bold shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Render Selected Plan Document: Either 5-Days View or 1-Day Daily DLP View */}
+        {planMode === '5-days' ? (
+          <FiveDaysPlanView
+            plan={fiveDaysPlan}
+            onUpdatePlan={(updated) => setFiveDaysPlan(updated)}
+            onSave={handleSaveFiveDays}
             isSaved={saved}
+            onConvertToDailyPlan={handleConvertDayToDailyPlan}
           />
-        )
-      )}
+        ) : (
+          structuredPlan && (
+            <DailyLessonPlanView
+              plan={structuredPlan}
+              onUpdatePlan={(updated) => setStructuredPlan(updated)}
+              onSave={handleSave}
+              isSaved={saved}
+            />
+          )
+        )}
+      </div>
     </div>
   );
 };

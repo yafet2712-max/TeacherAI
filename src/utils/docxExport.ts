@@ -11,6 +11,7 @@ import {
   BorderStyle,
   HeadingLevel,
   PageBreak,
+  PageOrientation,
 } from 'docx';
 import { DailyLessonPlanData, FiveDaysPlanData, DayPlanItem, LessonPlanStageRow } from '../types';
 
@@ -64,11 +65,14 @@ export async function exportLessonPlanToDocx(plan: DailyLessonPlanData): Promise
       {
         properties: {
           page: {
+            size: {
+              orientation: PageOrientation.LANDSCAPE,
+            },
             margin: {
-              top: 720, // 0.5 inch
-              right: 720,
-              bottom: 720,
-              left: 720,
+              top: 540, // 0.375 inch for clean landscape 9-column fit
+              right: 540,
+              bottom: 540,
+              left: 540,
             },
           },
         },
@@ -144,12 +148,47 @@ export async function exportLessonPlanToDocx(plan: DailyLessonPlanData): Promise
           }),
 
           new Paragraph({
-            spacing: { after: 200 },
+            spacing: { after: 140 },
             children: [
               new TextRun({ text: 'Competencies (Learning objectives):- ', italics: true }),
               new TextRun({ text: `${plan.competencies || ''}` }),
             ],
           }),
+
+          ...(Array.isArray(plan.mainIdeas) && plan.mainIdeas.length > 0
+            ? [
+                new Paragraph({
+                  spacing: { before: 60, after: 60 },
+                  children: [
+                    new TextRun({
+                      text: isOromic
+                        ? 'Yaadawwan Ijoo Barnootichaa (Key Lesson Main Ideas):'
+                        : isAmharic
+                        ? 'የትምህርቱ ዋና ዋና ሃሳቦች (Key Lesson Main Ideas):'
+                        : 'Key Lesson Main Ideas:',
+                      bold: true,
+                      italics: true,
+                      size: 20,
+                      font: 'Arial',
+                    }),
+                  ],
+                }),
+                ...plan.mainIdeas.map(
+                  (idea, i) =>
+                    new Paragraph({
+                      spacing: { after: i === plan.mainIdeas!.length - 1 ? 160 : 40 },
+                      indent: { left: 320 },
+                      children: [
+                        new TextRun({
+                          text: `• ${idea}`,
+                          size: 19,
+                          font: 'Arial',
+                        }),
+                      ],
+                    })
+                ),
+              ]
+            : []),
 
           // Main 9-column Stages Table
           new Table({
@@ -544,6 +583,41 @@ export async function exportFiveDaysPlanToDocx(plan: FiveDaysPlanData): Promise<
 
   const docChildren: any[] = [];
 
+  if (Array.isArray(plan.mainIdeas) && plan.mainIdeas.length > 0) {
+    docChildren.push(
+      new Paragraph({
+        spacing: { after: 60 },
+        children: [
+          new TextRun({
+            text: isOromic
+              ? 'Yaadawwan Ijoo Torbee (Weekly Key Main Ideas):'
+              : isAmharic
+              ? 'የሳምንቱ ትምህርት ዋና ዋና ሃሳቦች (Weekly Main Ideas):'
+              : 'Weekly Key Lesson Main Ideas:',
+            bold: true,
+            italics: true,
+            size: 21,
+            font: 'Arial',
+          }),
+        ],
+      }),
+      ...plan.mainIdeas.map(
+        (idea, idx) =>
+          new Paragraph({
+            spacing: { after: idx === plan.mainIdeas!.length - 1 ? 180 : 40 },
+            indent: { left: 320 },
+            children: [
+              new TextRun({
+                text: `• ${idea}`,
+                size: 19,
+                font: 'Arial',
+              }),
+            ],
+          })
+      )
+    );
+  }
+
   plan.days.forEach((day, idx) => {
     const dayLessonTopic = day.lessonTopic || day.subTopic || plan.unitAndTopic || '';
     const dayDate = day.date || day.dayName || plan.weekRangeOrDates || '';
@@ -776,11 +850,14 @@ export async function exportFiveDaysPlanToDocx(plan: FiveDaysPlanData): Promise<
       {
         properties: {
           page: {
+            size: {
+              orientation: PageOrientation.LANDSCAPE,
+            },
             margin: {
-              top: 720,
-              right: 720,
-              bottom: 720,
-              left: 720,
+              top: 540,
+              right: 540,
+              bottom: 540,
+              left: 540,
             },
           },
         },

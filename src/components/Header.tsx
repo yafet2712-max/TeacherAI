@@ -20,9 +20,12 @@ import {
   ExternalLink,
   Copy,
   Crown,
-  FileSpreadsheet
+  FileSpreadsheet,
+  MessageCircle,
+  Send
 } from 'lucide-react';
 import { PWAInstallButton } from './PWAInstallButton';
+import { copyTextSafe } from '../utils/clipboard';
 
 interface HeaderProps {
   currentTab: AppTab;
@@ -49,6 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
 
   const tabs = [
     { id: 'lesson-planner' as AppTab, amharic: 'የ1 እና 5 ቀን እቅድ', english: 'Lesson Plans', icon: BookOpen },
@@ -64,10 +68,36 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'library' as AppTab, amharic: 'ቤተ-መጻሕፍት', english: 'Saved', icon: Bookmark, badge: savedCount },
   ];
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(publishedUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
+  const shareText = `Meskerem school ai — Ethiopian Teachers Daily & 5-Day Lesson Plans, Quizzes & Mark List Tools: ${publishedUrl}`;
+  const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(publishedUrl)}&text=${encodeURIComponent('Meskerem school ai — Ethiopian Teachers AI Assistant')}`;
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+
+  const handleCopyLink = async () => {
+    const ok = await copyTextSafe(publishedUrl);
+    if (ok) {
+      setCopiedLink(true);
+      setCopyFailed(false);
+      setTimeout(() => setCopiedLink(false), 2500);
+    } else {
+      setCopyFailed(true);
+      setTimeout(() => setCopyFailed(false), 3500);
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: 'Meskerem school ai',
+          text: 'Ethiopian Teachers Daily & 5-Day Lesson Plans, Quizzes & Mark List Tools',
+          url: publishedUrl,
+        });
+        return;
+      } catch {
+        // User cancelled or Web Share blocked; fall back to clipboard
+      }
+    }
+    await handleCopyLink();
   };
 
   return (
@@ -80,7 +110,12 @@ export const Header: React.FC<HeaderProps> = ({
             <img
               src="/assets/aistudio/learning-management-system-for-school-8663453-6967857_4c5fb857.png"
               alt="Meskerem school ai logo"
-              referrerPolicy="no-referrer"
+              onError={(e) => {
+                if (!e.currentTarget.dataset.fb) {
+                  e.currentTarget.dataset.fb = '1';
+                  e.currentTarget.src = '/pwa-192x192.png';
+                }
+              }}
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-contain bg-white border border-stone-200 p-0.5 shadow-xs shrink-0"
             />
             <div className="min-w-0">
@@ -104,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden md:inline">Admin</span>
             </button>
 
-            <PWAInstallButton />
+            <PWAInstallButton publishedUrl={publishedUrl} />
 
             <button
               onClick={() => setIsShareModalOpen(true)}
@@ -195,7 +230,12 @@ export const Header: React.FC<HeaderProps> = ({
                 <img
                   src="/assets/aistudio/learning-management-system-for-school-8663453-6967857_4c5fb857.png"
                   alt="Meskerem school ai logo"
-                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    if (!e.currentTarget.dataset.fb) {
+                      e.currentTarget.dataset.fb = '1';
+                      e.currentTarget.src = '/pwa-192x192.png';
+                    }
+                  }}
                   className="w-10 h-10 rounded-xl object-contain bg-white border border-stone-200 p-0.5 shrink-0"
                 />
                 <div>
@@ -234,11 +274,46 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             </div>
 
+            {copyFailed && (
+              <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                Clipboard access is restricted in this view — tap and hold the link above to copy manually, or share directly below.
+              </p>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleNativeShare}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>Share Device</span>
+              </button>
+              <a
+                href={telegramShareUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Telegram</span>
+              </a>
+              <a
+                href={whatsappShareUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>WhatsApp</span>
+              </a>
+            </div>
+
             <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
               <a
                 href={publishedUrl}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="flex items-center gap-1.5 font-bold text-emerald-700 hover:text-emerald-800"
               >
                 <ExternalLink className="w-3.5 h-3.5" />

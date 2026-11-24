@@ -3,6 +3,7 @@ import { Compass, Sparkles, Copy, Check, Bookmark, Loader2, Volume2, HelpCircle,
 import { playAmharicAudio } from '../utils/audio';
 import { SavedMaterial } from '../types';
 import { exportTextOrQuizToDocx } from '../utils/docxExport';
+import { copyTextSafe } from '../utils/clipboard';
 
 interface GrammarLabProps {
   onSaveToLibrary: (item: Omit<SavedMaterial, 'id' | 'createdAt'>) => void;
@@ -90,11 +91,13 @@ export const GrammarLab: React.FC<GrammarLabProps> = ({ onSaveToLibrary, onOpenK
     }
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!explanation) return;
-    navigator.clipboard.writeText(explanation);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const ok = await copyTextSafe(explanation);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleSave = () => {

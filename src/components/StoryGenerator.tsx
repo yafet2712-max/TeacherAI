@@ -3,6 +3,7 @@ import { BookOpenText, Sparkles, Printer, Copy, Check, Bookmark, Loader2, Volume
 import { playAmharicAudio } from '../utils/audio';
 import { SavedMaterial } from '../types';
 import { exportTextOrQuizToDocx } from '../utils/docxExport';
+import { copyTextSafe } from '../utils/clipboard';
 
 interface StoryGeneratorProps {
   onSaveToLibrary: (item: Omit<SavedMaterial, 'id' | 'createdAt'>) => void;
@@ -83,11 +84,13 @@ export const StoryGenerator: React.FC<StoryGeneratorProps> = ({ onSaveToLibrary,
     }
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!generatedStory) return;
-    navigator.clipboard.writeText(generatedStory);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const ok = await copyTextSafe(generatedStory);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleSave = () => {

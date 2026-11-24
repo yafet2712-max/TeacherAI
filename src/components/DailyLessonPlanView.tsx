@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { DailyLessonPlanData } from '../types';
-import { Printer, Copy, Check, Bookmark, Edit3, Eye, RotateCcw, Download } from 'lucide-react';
+import { Printer, Copy, Check, Bookmark, Edit3, Eye, Download, Lightbulb, Plus, Trash2 } from 'lucide-react';
 import { exportLessonPlanToDocx } from '../utils/docxExport';
+import { copyTextSafe } from '../utils/clipboard';
 
 interface DailyLessonPlanViewProps {
   plan: DailyLessonPlanData;
@@ -9,6 +10,17 @@ interface DailyLessonPlanViewProps {
   onSave?: () => void;
   isSaved?: boolean;
 }
+
+const BlankLine: React.FC<{ wide?: boolean }> = ({ wide }) => (
+  <span
+    aria-hidden="true"
+    className={`inline-block border-b border-stone-400 align-bottom ${
+      wide ? 'w-44 sm:w-64 max-w-full' : 'w-28 sm:w-40 max-w-full'
+    }`}
+  >
+    &nbsp;
+  </span>
+);
 
 export const DailyLessonPlanView: React.FC<DailyLessonPlanViewProps> = ({
   plan: initialPlan,
@@ -65,8 +77,32 @@ export const DailyLessonPlanView: React.FC<DailyLessonPlanViewProps> = ({
     if (onUpdatePlan) onUpdatePlan(updated);
   };
 
-  const handleCopyText = () => {
-    const textRepresentation = `Daily Lesson Plan
+  const handleMainIdeaChange = (idx: number, value: string) => {
+    const current = Array.isArray(plan.mainIdeas) ? [...plan.mainIdeas] : [];
+    current[idx] = value;
+    handleChange('mainIdeas', current);
+  };
+
+  const handleAddMainIdea = () => {
+    const current = Array.isArray(plan.mainIdeas) ? [...plan.mainIdeas] : [];
+    handleChange('mainIdeas', [...current, '']);
+  };
+
+  const handleRemoveMainIdea = (idx: number) => {
+    const current = Array.isArray(plan.mainIdeas) ? [...plan.mainIdeas] : [];
+    handleChange(
+      'mainIdeas',
+      current.filter((_, i) => i !== idx)
+    );
+  };
+
+  const handleCopyText = async () => {
+    const ideasBlock =
+      Array.isArray(plan.mainIdeas) && plan.mainIdeas.length > 0
+        ? `\nKey Lesson Main Ideas:\n${plan.mainIdeas.map((m) => `• ${m}`).join('\n')}\n`
+        : '';
+
+    const textRepresentation = `Daily Lesson Plan (Landscape Format)
 
 Name of teacher:- ${plan.teacherName}    Name of School:- ${plan.schoolName}
 Subject:- ${plan.subject}    Unit and topic:- ${plan.unitAndTopic}
@@ -75,7 +111,7 @@ Date:- ${plan.date}
 
 Rationale of the topic:- ${plan.rationale}
 Pre-requisite knowledge:- ${plan.prerequisiteKnowledge}
-Competencies (Learning objectives):- ${plan.competencies}
+Competencies (Learning objectives):- ${plan.competencies}${ideasBlock}
 
 Stages | Time | Contents | Page | Teacher's activities | Student's activities | Assessment | Aids | Remarks
 ${plan.stages
@@ -96,28 +132,45 @@ Name of the Vice - principal:- ${plan.vicePrincipalName || ''}    Signature:-
 Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
 `;
 
-    navigator.clipboard.writeText(textRepresentation);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const ok = await copyTextSafe(textRepresentation);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handlePrint = () => {
     window.print();
   };
 
+  // Derive main ideas for display if the plan has content
+  const hasContent = Boolean(plan.lessonTopic || plan.unitAndTopic || plan.competencies);
+  const effectiveMainIdeas: string[] =
+    Array.isArray(plan.mainIdeas) && plan.mainIdeas.length > 0
+      ? plan.mainIdeas
+      : hasContent
+      ? [
+          plan.rationale,
+          plan.competencies,
+          ...plan.stages.map((s) => s.learningContents).filter(Boolean),
+        ]
+          .filter((v): v is string => Boolean(v && v.trim()))
+          .slice(0, 4)
+      : [];
+
   return (
-    <div className="bg-white rounded-3xl border border-stone-200 shadow-xl overflow-hidden printable-area">
+    <div className="bg-white rounded-3xl border border-stone-200 shadow-xl overflow-hidden printable-area landscape-print">
       {/* Actions Bar (hidden in print) */}
-      <div className="bg-stone-100/90 border-b border-stone-200 px-6 py-3 flex flex-wrap items-center justify-between gap-3 no-print">
-        <div className="flex items-center gap-2">
+      <div className="bg-stone-100/90 border-b border-stone-200 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 no-print">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
           <span className="font-bold text-stone-800 text-sm">
             {isOromic
               ? 'Karoora Barnoota Guyyaa (Daily Lesson Plan)'
               : 'ዕለታዊ የትምህርት እቅድ (Daily Lesson Plan)'}
           </span>
-          <span className="text-xs text-stone-500 hidden sm:inline">
-            • {isOromic ? 'Sirna Barnoota Oromiyaa fi Itoophiyaa' : 'Official MoE Primary Table'}
+          <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+            Landscape A4
           </span>
         </div>
 
@@ -171,10 +224,10 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
         </div>
       </div>
 
-      {/* Official Paper Canvas */}
-      <div className="p-6 md:p-12 text-stone-900 font-sans text-xs sm:text-sm leading-relaxed max-w-5xl mx-auto">
+      {/* Official Landscape Paper Canvas */}
+      <div className="p-4 sm:p-6 md:p-10 text-stone-900 font-sans text-xs sm:text-sm leading-relaxed max-w-[1360px] mx-auto">
         {/* Title */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-5">
           <h1 className="text-xl sm:text-2xl font-bold italic tracking-wide text-stone-900">
             {isOromic
               ? 'KAROORA BARNOOTA GUYYAA'
@@ -184,16 +237,16 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
           </h1>
           <div className="text-xs font-semibold text-stone-500 mt-1">
             {isOromic
-              ? 'Sirna Barnoota Oromiyaa fi Itoophiyaa (Daily Lesson Plan Format)'
+              ? 'Sirna Barnoota Oromiyaa fi Itoophiyaa (Landscape Format)'
               : isAmharic
-              ? 'የኢትዮጵያ ትምህርት ሚኒስቴር ይፋዊ የ9-ዓምድ ሰንጠረዥ'
-              : 'Official Ministry of Education Primary 9-Column Table'}
+              ? 'የኢትዮጵያ ትምህርት ሚኒስቴር ይፋዊ የ9-ዓምድ ሰንጠረዥ (Landscape)'
+              : 'Official Ministry of Education Primary 9-Column Table (Landscape)'}
           </div>
         </div>
 
         {/* Top Two-Column Information Fields */}
-        <div className="space-y-2 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+        <div className="space-y-2 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
             <div>
               <span className="italic font-medium">
                 {isOromic ? 'Maqaa Barsiisaa:- ' : isAmharic ? 'የመምህሩ ስም:- ' : 'Name of teacher:- '}
@@ -206,7 +259,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   className="border-b border-amber-500 font-semibold px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                 />
               ) : (
-                <span className="font-semibold">{plan.teacherName || '________________________'}</span>
+                <span className="font-semibold">{plan.teacherName || <BlankLine />}</span>
               )}
             </div>
 
@@ -222,12 +275,12 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   className="border-b border-amber-500 font-semibold px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                 />
               ) : (
-                <span className="font-semibold uppercase">{plan.schoolName || '________________________________'}</span>
+                <span className="font-semibold uppercase">{plan.schoolName || <BlankLine wide />}</span>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
             <div>
               <span className="italic font-medium">
                 {isOromic ? 'Gosa Barnootaa:- ' : isAmharic ? 'የትምህርት ዓይነት:- ' : 'Subject:- '}
@@ -240,7 +293,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-48 focus:outline-none"
                 />
               ) : (
-                <span>{plan.subject || '____________________'}</span>
+                <span>{plan.subject || <BlankLine />}</span>
               )}
             </div>
 
@@ -256,12 +309,12 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                 />
               ) : (
-                <span>{plan.unitAndTopic || '________________________'}</span>
+                <span>{plan.unitAndTopic || <BlankLine wide />}</span>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
             <div>
               <span className="italic font-medium">
                 {isOromic ? 'Kutaa fi Sekshinii:- ' : isAmharic ? 'ክፍል እና ሴክሽን:- ' : 'Grade and Section:- '}
@@ -274,7 +327,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-40 focus:outline-none"
                 />
               ) : (
-                <span>{plan.gradeAndSection || '____________'}</span>
+                <span>{plan.gradeAndSection || <BlankLine />}</span>
               )}
             </div>
 
@@ -290,7 +343,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                 />
               ) : (
-                <span>{plan.lessonTopic || '________________________'}</span>
+                <span className="font-semibold">{plan.lessonTopic || <BlankLine wide />}</span>
               )}
             </div>
           </div>
@@ -307,7 +360,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                 className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-64 focus:outline-none"
               />
             ) : (
-              <span>{plan.date || '____________________'}</span>
+              <span>{plan.date || <BlankLine wide />}</span>
             )}
           </div>
 
@@ -324,7 +377,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   className="w-full border border-amber-400 p-1 rounded focus:outline-none"
                 />
               ) : (
-                <span>{plan.rationale || '________________________________________________________________'}</span>
+                <span>{plan.rationale || <BlankLine wide />}</span>
               )}
             </p>
 
@@ -340,7 +393,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   className="w-full border border-amber-400 p-1 rounded focus:outline-none"
                 />
               ) : (
-                <span>{plan.prerequisiteKnowledge || '________________________________________________________________'}</span>
+                <span>{plan.prerequisiteKnowledge || <BlankLine wide />}</span>
               )}
             </p>
 
@@ -356,11 +409,68 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   className="w-full border border-amber-400 p-1 rounded focus:outline-none"
                 />
               ) : (
-                <span>{plan.competencies || '________________________________________________________________'}</span>
+                <span>{plan.competencies || <BlankLine wide />}</span>
               )}
             </p>
           </div>
         </div>
+
+        {/* Main Ideas Described Card */}
+        {(effectiveMainIdeas.length > 0 || isEditing) && (
+          <div className="my-5 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 print:bg-white print:border-stone-400 print:rounded-none">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2 font-bold text-emerald-950 text-xs sm:text-sm">
+                <Lightbulb className="w-4 h-4 text-amber-600 shrink-0 no-print" />
+                <span>
+                  {isOromic
+                    ? 'Yaadawwan Ijoo Barnootichaa (Main Ideas Described)'
+                    : isAmharic
+                    ? 'የትምህርቱ ዋና ዋና ሃሳቦች (Main Ideas Described)'
+                    : 'Key Lesson Main Ideas Described'}
+                </span>
+              </div>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={handleAddMainIdea}
+                  className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 transition"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Idea</span>
+                </button>
+              )}
+            </div>
+
+            {isEditing ? (
+              <div className="space-y-2">
+                {(plan.mainIdeas && plan.mainIdeas.length > 0 ? plan.mainIdeas : effectiveMainIdeas).map((idea, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={idea}
+                      onChange={(e) => handleMainIdeaChange(idx, e.target.value)}
+                      className="flex-1 bg-white border border-amber-400 rounded-lg px-2.5 py-1 text-xs focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveMainIdea(idx)}
+                      className="p-1 text-rose-600 hover:bg-rose-50 rounded"
+                      title="Remove"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <ul className="list-disc pl-5 space-y-1 text-xs text-stone-800">
+                {effectiveMainIdeas.map((idea, idx) => (
+                  <li key={idx}>{idea}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         {/* 9-Column Daily Lesson Plan Table */}
         <div className="overflow-x-auto my-6 border border-stone-800">
@@ -583,10 +693,11 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
               <tr className="divide-x divide-stone-800">
                 <td className="p-2 w-1/2">
                   <span className="font-medium">Teacher's Name:- </span>
-                  <span className="font-bold">{plan.teacherName || '________________________'}</span>
+                  <span className="font-bold">{plan.teacherName || <BlankLine />}</span>
                 </td>
                 <td className="p-2 w-1/2">
-                  <span className="font-medium">Signature:- ________________________</span>
+                  <span className="font-medium">Signature:- </span>
+                  <BlankLine />
                 </td>
               </tr>
 
@@ -602,11 +713,12 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                       className="border-b border-amber-500 px-1 w-48 focus:outline-none"
                     />
                   ) : (
-                    <span>{plan.deptHeadName || '________________________'}</span>
+                    <span>{plan.deptHeadName || <BlankLine />}</span>
                   )}
                 </td>
                 <td className="p-2 w-1/2">
-                  <span className="font-medium">Signature:- ________________________</span>
+                  <span className="font-medium">Signature:- </span>
+                  <BlankLine />
                 </td>
               </tr>
 
@@ -622,11 +734,12 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                       className="border-b border-amber-500 px-1 w-48 focus:outline-none"
                     />
                   ) : (
-                    <span>{plan.vicePrincipalName || '________________________'}</span>
+                    <span>{plan.vicePrincipalName || <BlankLine />}</span>
                   )}
                 </td>
                 <td className="p-2 w-1/2">
-                  <span className="font-medium">Signature:- ________________________</span>
+                  <span className="font-medium">Signature:- </span>
+                  <BlankLine />
                 </td>
               </tr>
 
