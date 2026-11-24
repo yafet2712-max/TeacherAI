@@ -266,7 +266,7 @@ export const StoryGenerator: React.FC<StoryGeneratorProps> = ({ onSaveToLibrary,
               <span className="font-bold text-stone-800 text-sm">የንባብ ምንባብ ተዘጋጅቷል (Story Passage Ready)</span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={handleReadAloud}
                 disabled={isPlayingAudio}

@@ -121,7 +121,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setIsEditing(!isEditing)}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border transition ${
@@ -203,7 +203,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   type="text"
                   value={plan.teacherName}
                   onChange={(e) => handleChange('teacherName', e.target.value)}
-                  className="border-b border-amber-500 font-semibold px-1 py-0.5 w-60 focus:outline-none"
+                  className="border-b border-amber-500 font-semibold px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                 />
               ) : (
                 <span className="font-semibold">{plan.teacherName || '________________________'}</span>
@@ -219,7 +219,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   type="text"
                   value={plan.schoolName}
                   onChange={(e) => handleChange('schoolName', e.target.value)}
-                  className="border-b border-amber-500 font-semibold px-1 py-0.5 w-60 focus:outline-none"
+                  className="border-b border-amber-500 font-semibold px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                 />
               ) : (
                 <span className="font-semibold uppercase">{plan.schoolName || '________________________________'}</span>
@@ -237,7 +237,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   type="text"
                   value={plan.subject}
                   onChange={(e) => handleChange('subject', e.target.value)}
-                  className="border-b border-amber-500 px-1 py-0.5 w-48 focus:outline-none"
+                  className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-48 focus:outline-none"
                 />
               ) : (
                 <span>{plan.subject || '____________________'}</span>
@@ -253,7 +253,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   type="text"
                   value={plan.unitAndTopic}
                   onChange={(e) => handleChange('unitAndTopic', e.target.value)}
-                  className="border-b border-amber-500 px-1 py-0.5 w-60 focus:outline-none"
+                  className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                 />
               ) : (
                 <span>{plan.unitAndTopic || '________________________'}</span>
@@ -271,7 +271,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   type="text"
                   value={plan.gradeAndSection}
                   onChange={(e) => handleChange('gradeAndSection', e.target.value)}
-                  className="border-b border-amber-500 px-1 py-0.5 w-40 focus:outline-none"
+                  className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-40 focus:outline-none"
                 />
               ) : (
                 <span>{plan.gradeAndSection || '____________'}</span>
@@ -287,7 +287,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                   type="text"
                   value={plan.lessonTopic}
                   onChange={(e) => handleChange('lessonTopic', e.target.value)}
-                  className="border-b border-amber-500 px-1 py-0.5 w-60 focus:outline-none"
+                  className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                 />
               ) : (
                 <span>{plan.lessonTopic || '________________________'}</span>
@@ -304,7 +304,7 @@ Post lesson teacher's self-assessment:- ${plan.postLessonAssessment || ''}
                 type="text"
                 value={plan.date}
                 onChange={(e) => handleChange('date', e.target.value)}
-                className="border-b border-amber-500 px-1 py-0.5 w-64 focus:outline-none"
+                className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-64 focus:outline-none"
               />
             ) : (
               <span>{plan.date || '____________________'}</span>

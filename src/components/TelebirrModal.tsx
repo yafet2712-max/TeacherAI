@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Crown, CheckCircle2, Phone, ShieldCheck, Sparkles, X, AlertCircle, ExternalLink, Send } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Crown, CheckCircle2, ShieldCheck, X, AlertCircle, ExternalLink, Send, Clock } from 'lucide-react';
+import type { SubscriptionRequest } from './AdminDashboard';
 
 interface TelebirrModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSubmitted: (request: SubscriptionRequest) => void;
   serviceTitle?: string;
   featureKey?: string;
 }
@@ -12,15 +13,31 @@ interface TelebirrModalProps {
 export const TelebirrModal: React.FC<TelebirrModalProps> = ({
   isOpen,
   onClose,
-  onSuccess,
+  onSubmitted,
   serviceTitle = 'ፕሪሚየም አገልግሎት (Premium Service)',
   featureKey = 'general',
 }) => {
   const [transactionId, setTransactionId] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submittedRequest, setSubmittedRequest] = useState<SubscriptionRequest | null>(null);
+  const [existingPending, setExistingPending] = useState<SubscriptionRequest | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setError(null);
+      setSubmittedRequest(null);
+      try {
+        const raw = localStorage.getItem('teacher_helper_subscription_requests_v1');
+        const list: SubscriptionRequest[] = raw ? JSON.parse(raw) : [];
+        const pending = list.find((r) => r.featureKey === featureKey && r.status === 'pending');
+        setExistingPending(pending || null);
+      } catch {
+        setExistingPending(null);
+      }
+    }
+  }, [isOpen, featureKey]);
 
   if (!isOpen) return null;
 
@@ -34,23 +51,26 @@ export const TelebirrModal: React.FC<TelebirrModalProps> = ({
     setError(null);
 
     try {
-      // Save subscription request for admin approval
-      const newReq = {
-        id: 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      const refCode = 'REF-' + Math.floor(100000 + Math.random() * 900000);
+      const newReq: SubscriptionRequest = {
+        id: refCode,
         phoneNumber: phoneNumber.trim(),
         featureKey: featureKey || 'general',
         serviceTitle: serviceTitle || 'ፕሪሚየም አገልግሎት',
         transactionId: transactionId.trim(),
         timestamp: Date.now(),
-        status: 'pending' as const,
+        status: 'pending',
       };
 
       const existing = localStorage.getItem('teacher_helper_subscription_requests_v1');
-      const reqs = existing ? JSON.parse(existing) : [];
+      const reqs: SubscriptionRequest[] = existing ? JSON.parse(existing) : [];
       localStorage.setItem('teacher_helper_subscription_requests_v1', JSON.stringify([newReq, ...reqs]));
 
       setLoading(false);
-      setSubmitted(true);
+      setSubmittedRequest(newReq);
+      setTransactionId('');
+      setPhoneNumber('');
+      onSubmitted(newReq);
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -58,15 +78,11 @@ export const TelebirrModal: React.FC<TelebirrModalProps> = ({
     }
   };
 
-  const handleFinish = () => {
-    setSubmitted(false);
-    onSuccess();
-    onClose();
-  };
+  const activePending = submittedRequest || existingPending;
 
   return (
     <div className="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-stone-200 overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200">
         {/* Header */}
         <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white p-6 relative">
           <button
@@ -83,14 +99,14 @@ export const TelebirrModal: React.FC<TelebirrModalProps> = ({
               <span className="text-xs font-bold text-amber-300 uppercase tracking-widest">
                 Telebirr 30-Day Subscription (50 ETB)
               </span>
-              <h3 className="text-xl font-black">{serviceTitle}</h3>
+              <h3 className="text-lg font-black leading-tight">{serviceTitle}</h3>
             </div>
           </div>
         </div>
 
         {/* Body */}
         <div className="p-6 space-y-4">
-          {!submitted ? (
+          {!activePending ? (
             <>
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-950 space-y-2.5">
                 <div className="flex items-center gap-2 font-bold text-amber-900">
@@ -98,7 +114,7 @@ export const TelebirrModal: React.FC<TelebirrModalProps> = ({
                   <span>ኦፊሴላዊ የክፍያ እና ማረጋገጫ መመሪያ (Official Verification)</span>
                 </div>
                 <p className="leading-relaxed">
-                  ይህንን አገልግሎት ለ <strong>1 ወር (30 ቀናት)</strong> ለመጠቀም በቴሌብር የ <strong>50 ብር</strong> ክፍያ ይፈጽሙ።
+                  ይህንን አገልግሎት ለ <strong>1 ወር (30 ቀናት)</strong> ለመጠቀም በቴሌብር የ <strong>50 ብር</strong> የአንድ ጊዜ ክፍያ ይፈጽሙ።
                 </p>
                 <div className="bg-white p-3 rounded-xl border border-amber-300 font-mono font-bold text-sm text-stone-900 flex items-center justify-between">
                   <span>Telebirr: +251956263882</span>
@@ -171,16 +187,41 @@ export const TelebirrModal: React.FC<TelebirrModalProps> = ({
               </form>
             </>
           ) : (
-            <div className="py-6 text-center space-y-4">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-3xl mx-auto flex items-center justify-center text-3xl shadow-inner animate-bounce">
-                ✅
+            <div className="py-4 text-center space-y-4">
+              <div className="w-16 h-16 bg-amber-100 text-amber-700 rounded-3xl mx-auto flex items-center justify-center shadow-inner">
+                <Clock className="w-8 h-8" />
               </div>
-              <h4 className="text-lg font-black text-stone-900">የክፍያ ጥያቄዎ በተሳካ ሁኔታ ተልኳል!</h4>
+              <h4 className="text-lg font-black text-stone-900">ጥያቄዎ በመጠባበቅ ላይ ነው (Pending Approval)</h4>
+              <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs space-y-1 text-left">
+                <div className="flex justify-between">
+                  <span className="text-stone-500">መለያ ቁጥር (Ref ID):</span>
+                  <strong className="font-mono text-emerald-800">{activePending.id}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stone-500">Transaction ID:</span>
+                  <strong className="font-mono text-stone-900">{activePending.transactionId}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stone-500">ሁኔታ (Status):</span>
+                  <span className="bg-amber-500 text-white px-2 py-0.5 rounded-full text-[10px] font-black uppercase">
+                    Pending
+                  </span>
+                </div>
+              </div>
               <p className="text-xs text-stone-600 leading-relaxed px-2">
-                እባክዎ የክፍያ ማረጋገጫ (Screenshot) በቴሌግራም <a href="https://t.me/zenayafet" target="_blank" rel="noreferrer" className="text-emerald-700 font-bold underline">@zenayafet</a> በመላክ ያስታውቁ። ባለቤቱ ሲያጸድቀው (Approved) የአንድ ወር (30 ቀናት) አገልግሎቱ ይከፈታል።
+                እባክዎ የክፍያ ማረጋገጫውን (Screenshot) እና ከላይ ያለውን መለያ ቁጥር <strong>{activePending.id}</strong> በቴሌግራም{' '}
+                <a
+                  href="https://t.me/zenayafet"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-emerald-700 font-bold underline"
+                >
+                  @zenayafet
+                </a>{' '}
+                ይላኩ። ባለቤቱ በ Admin Dashboard ሲያጸድቀው (Approved) የ 30 ቀናት አገልግሎቱ በቀጥታ ይከፈታል።
               </p>
               <button
-                onClick={handleFinish}
+                onClick={onClose}
                 className="w-full py-3 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-2xl text-xs transition"
               >
                 እሺ (OK)

@@ -84,7 +84,7 @@ export const WorksheetMaker: React.FC<WorksheetMakerProps> = ({
           numQuestions,
           questionTypes: selectedTypes.map((id) => QUESTION_TYPES.find((q) => q.id === id)?.label || id),
           includePhonetics,
-          includeAnswerKey: true,
+          includeAnswerKey,
           schoolProfile,
           language: languageMode,
         }),
@@ -171,7 +171,7 @@ export const WorksheetMaker: React.FC<WorksheetMakerProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start md:self-auto">
+          <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
             <button
               onClick={onOpenSchoolSettings}
               className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl transition"
@@ -226,27 +226,33 @@ export const WorksheetMaker: React.FC<WorksheetMakerProps> = ({
       <div className="bg-white p-6 rounded-3xl border border-stone-200/90 shadow-sm space-y-4 no-print">
         {/* Ethiopian Curriculum Language Policy Indicator */}
         <div className={`p-4 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-3 ${
-          curriculumRule.language === 'Amharic'
+          languageMode === 'Afaan Oromoo'
+            ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
+            : curriculumRule.language === 'Amharic'
             ? 'bg-amber-50/90 border-amber-300 text-amber-950'
             : 'bg-blue-50/90 border-blue-300 text-blue-950'
         }`}>
           <div className="flex items-start gap-3">
-            <span className="text-2xl mt-0.5">{curriculumRule.language === 'Amharic' ? '🇪🇹' : '🇬🇧'}</span>
+            <span className="text-2xl mt-0.5">
+              {languageMode === 'Afaan Oromoo' ? '🌳' : curriculumRule.language === 'Amharic' ? '🇪🇹' : '🇬🇧'}
+            </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-wider">
                   የሥርዓተ-ትምህርት ቋንቋ ደንብ (Curriculum Rule)
                 </span>
                 <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold border shadow-xs ${
-                  curriculumRule.language === 'Amharic'
+                  languageMode === 'Afaan Oromoo'
+                    ? 'bg-emerald-200 border-emerald-400 text-emerald-900'
+                    : curriculumRule.language === 'Amharic'
                     ? 'bg-amber-200 border-amber-400 text-amber-900'
                     : 'bg-blue-200 border-blue-400 text-blue-900'
                 }`}>
-                  {curriculumRule.badgeText}
+                  {languageMode === 'Afaan Oromoo' ? 'Afaan Oromoo (Oromic)' : curriculumRule.badgeText}
                 </span>
               </div>
               <p className="text-xs font-medium mt-1 leading-relaxed">
-                {curriculumRule.ruleDescriptionAm}
+                {languageMode === 'Afaan Oromoo' ? curriculumRule.ruleDescriptionOro : curriculumRule.ruleDescriptionAm}
               </p>
               <p className="text-[11px] opacity-75 mt-0.5 italic">
                 {curriculumRule.ruleDescriptionEn}
@@ -261,8 +267,9 @@ export const WorksheetMaker: React.FC<WorksheetMakerProps> = ({
               onChange={(e) => setLanguageMode(e.target.value)}
               className="px-2 py-1 text-xs font-bold bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="Amharic">አማርኛ (Amharic)</option>
-              <option value="English">English</option>
+              <option value="Amharic">🇪🇹 አማርኛ (Amharic)</option>
+              <option value="Afaan Oromoo">🌳 Afaan Oromoo (Oromic)</option>
+              <option value="English">🇬🇧 English</option>
             </select>
           </div>
         </div>
@@ -381,7 +388,7 @@ export const WorksheetMaker: React.FC<WorksheetMakerProps> = ({
           </div>
         )}
 
-        <div className="pt-2 flex items-center justify-between">
+        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="text-xs text-stone-500">
             School: <strong>{schoolProfile.schoolName}</strong>
           </div>
@@ -389,7 +396,7 @@ export const WorksheetMaker: React.FC<WorksheetMakerProps> = ({
           <button
             onClick={handleGenerate}
             disabled={loading}
-            className="flex items-center gap-2 px-7 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition shadow-lg shadow-blue-600/25 disabled:opacity-50 text-sm"
+            className="flex items-center justify-center gap-2 px-7 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition shadow-lg shadow-blue-600/25 disabled:opacity-50 text-sm"
           >
             {loading ? (
               <>
@@ -409,13 +416,12 @@ export const WorksheetMaker: React.FC<WorksheetMakerProps> = ({
       {/* Generated Worksheet Output Area */}
       {generatedWorksheet && (
         <div className="bg-white rounded-3xl border border-stone-200 shadow-xl overflow-hidden printable-area">
-          <div className="bg-stone-50 border-b border-stone-200 px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 no-print">
+          <div className="bg-stone-50 border-b border-stone-200 px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 no-print">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
               <span className="font-bold text-stone-800 text-sm">የፈተና ወረቀት ተዘጋጅቷል (Worksheet Ready)</span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setShowAnswerKey(!showAnswerKey)}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl transition"
@@ -491,7 +497,7 @@ export const WorksheetMaker: React.FC<WorksheetMakerProps> = ({
 
               {/* Student Info & Score Mark Box */}
               <div className="mt-5 pt-3 border-t border-dashed border-stone-400 flex flex-wrap items-center justify-between text-xs text-stone-800 gap-3">
-                <div className="text-left space-y-1.5 flex-1 min-w-[260px]">
+                <div className="text-left space-y-1.5 flex-1 min-w-0 sm:min-w-[260px]">
                   <p>የተማሪው ስም (Student Name): ________________________________________</p>
                   <p>ክፍል / ሴክሽን (Section): ____________  ቀን (Date): ____________________</p>
                 </div>

@@ -15,6 +15,7 @@ export const SavedLibrary: React.FC<SavedLibraryProps> = ({ items, onDeleteItem,
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [activeItem, setActiveItem] = useState<SavedMaterial | null>(null);
   const [copied, setCopied] = useState(false);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
 
   const filteredItems = items.filter((item) => {
     const matchesFilter = selectedFilter === 'all' || item.type === selectedFilter;
@@ -72,12 +73,32 @@ export const SavedLibrary: React.FC<SavedLibraryProps> = ({ items, onDeleteItem,
           </div>
 
           {items.length > 0 && (
-            <button
-              onClick={onClearAll}
-              className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-3 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 transition self-start md:self-auto"
-            >
-              ሁሉንም አጽዳ (Clear All)
-            </button>
+            confirmClearAll ? (
+              <div className="flex items-center gap-2 self-start md:self-auto">
+                <button
+                  onClick={() => {
+                    onClearAll();
+                    setConfirmClearAll(false);
+                  }}
+                  className="text-xs bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg transition shadow-sm"
+                >
+                  አረጋግጥ (Confirm Clear)
+                </button>
+                <button
+                  onClick={() => setConfirmClearAll(false)}
+                  className="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold px-3 py-1.5 rounded-lg transition"
+                >
+                  ተው (Cancel)
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmClearAll(true)}
+                className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-3 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 transition self-start md:self-auto"
+              >
+                ሁሉንም አጽዳ (Clear All)
+              </button>
+            )
           )}
         </div>
 
@@ -205,15 +226,15 @@ export const SavedLibrary: React.FC<SavedLibraryProps> = ({ items, onDeleteItem,
       {activeItem && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fadeIn printable-area">
-            <div className="p-4 border-b border-stone-200 flex items-center justify-between bg-stone-50 no-print">
-              <div className="flex items-center gap-2">
+            <div className="p-4 border-b border-stone-200 flex flex-wrap items-center justify-between gap-2 bg-stone-50 no-print">
+              <div className="flex items-center gap-2 min-w-0">
                 {getIcon(activeItem.type)}
-                <h3 className="font-bold text-stone-900 text-sm font-amharic truncate max-w-md">
+                <h3 className="font-bold text-stone-900 text-sm font-amharic truncate max-w-full sm:max-w-md">
                   {activeItem.title}
                 </h3>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => handleCopy(activeItem.content)}
                   className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 rounded-lg transition"

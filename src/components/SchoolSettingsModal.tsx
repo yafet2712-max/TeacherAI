@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SchoolProfile } from '../types';
-import { Building2, Check, X, Sparkles, MapPin, User, Award, School } from 'lucide-react';
+import { Building2, Check, X, MapPin, User, Award, School } from 'lucide-react';
 
 interface SchoolSettingsModalProps {
   isOpen: boolean;
@@ -11,10 +11,10 @@ interface SchoolSettingsModalProps {
 
 const SAMPLE_ETHIOPIAN_SCHOOLS: Partial<SchoolProfile>[] = [
   {
-    schoolName: 'Dil-Betigl Primary School',
-    amharicSchoolName: 'ድል-በትግል የመጀመሪያ ደረጃ ትምህርት ቤት',
-    woredaSubcity: 'Yeka Sub-City, Woreda 08',
-    cityRegion: 'Addis Ababa',
+    schoolName: 'Meskerem pre-primary , primary and medium school',
+    amharicSchoolName: 'መስከረም ቅድመ-መጀመሪያ፣ መጀመሪያ እና መካከለኛ ደረጃ ትምህርት ቤት',
+    woredaSubcity: 'Addis Ababa',
+    cityRegion: 'Ethiopia',
     motto: 'Striving for Quality Education / ለላቀ የትምህርት ጥራት እንተጋለን',
   },
   {
@@ -49,6 +49,13 @@ export const SchoolSettingsModal: React.FC<SchoolSettingsModalProps> = ({
   const [formData, setFormData] = useState<SchoolProfile>(profile);
   const [savedNotification, setSavedNotification] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(profile);
+      setSavedNotification(false);
+    }
+  }, [profile, isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -70,7 +77,7 @@ export const SchoolSettingsModal: React.FC<SchoolSettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden border border-amber-200 animate-fadeIn">
+      <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-amber-200 animate-fadeIn">
         {/* Header */}
         <div className="bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 text-white p-6 relative">
           <button
@@ -134,7 +141,7 @@ export const SchoolSettingsModal: React.FC<SchoolSettingsModalProps> = ({
                   required
                   value={formData.schoolName}
                   onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
-                  placeholder="e.g. Dil-Betigl Primary School"
+                  placeholder="e.g. Meskerem pre-primary , primary and medium school"
                   className="w-full pl-9 pr-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
                 />
               </div>
@@ -148,7 +155,7 @@ export const SchoolSettingsModal: React.FC<SchoolSettingsModalProps> = ({
                 type="text"
                 value={formData.amharicSchoolName}
                 onChange={(e) => setFormData({ ...formData, amharicSchoolName: e.target.value })}
-                placeholder="ለምሳሌ: ድል-በትግል የመጀመሪያ ደረጃ ት/ቤት"
+                placeholder="ለምሳሌ: መስከረም ቅድመ-መጀመሪያ፣ መጀመሪያ እና መካከለኛ ደረጃ ት/ቤት"
                 className="w-full px-3 py-2 text-sm font-amharic bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
               />
             </div>

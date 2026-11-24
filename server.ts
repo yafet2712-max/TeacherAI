@@ -46,10 +46,9 @@ You always structure lesson plans and assessments according to the official Ethi
 // Resilient content generator with model fallback and retry
 async function generateGeminiContent(options: {
   contents: any;
-  temperature?: number;
   systemInstruction?: string;
 }): Promise<string> {
-  const candidateModels = ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
+  const candidateModels = ['gemini-4-hydrogen', 'gemini-3.1-flash-lite'];
   let lastError: any = null;
 
   for (const model of candidateModels) {
@@ -60,7 +59,6 @@ async function generateGeminiContent(options: {
           contents: options.contents,
           config: {
             systemInstruction: options.systemInstruction || SYSTEM_PROMPT_EDUCATOR,
-            temperature: options.temperature ?? 0.7,
           },
         });
         if (response.text) {
@@ -69,12 +67,23 @@ async function generateGeminiContent(options: {
       } catch (err: any) {
         lastError = err;
         console.warn(`Model ${model} attempt ${attempt} failed:`, err?.message || err);
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, attempt * 750));
       }
     }
   }
 
-  throw lastError || new Error('Failed to generate content with available models');
+  const rawMessage = lastError?.message || 'Failed to generate content with available models';
+  let friendlyMessage = rawMessage;
+  try {
+    const parsed = JSON.parse(rawMessage);
+    if (parsed?.error?.message) {
+      friendlyMessage = parsed.error.message;
+    }
+  } catch {
+    // rawMessage is not JSON; keep as-is
+  }
+
+  throw new Error(friendlyMessage);
 }
 
 // Helper function to resolve curriculum language according to Ethiopian Ministry of Education policy:
@@ -357,7 +366,6 @@ ${isOromic ? `{
     try {
       rawResponse = await generateGeminiContent({
         contents: prompt,
-        temperature: 0.4,
       });
 
       const cleanJson = rawResponse
@@ -367,9 +375,64 @@ ${isOromic ? `{
         .trim();
       planData = JSON.parse(cleanJson);
     } catch (parseErr) {
-      console.warn('Failed to parse JSON directly from Gemini, using structured fallback regex');
-      // Create fallback structure populated according to language
-      if (isAmharic) {
+      console.warn('Failed to parse JSON directly from Gemini, using structured fallback');
+      if (isOromic) {
+        planData = {
+          schoolName,
+          teacherName,
+          subject: subject || 'Barnoota Afaan Oromoo',
+          unitAndTopic: topic || 'Boqonnaa Tokko',
+          gradeAndSection: gradeLevel || 'Kutaa 1ffaa',
+          lessonTopic: specificFocus || topic || 'Mata Duree Barnootaa',
+          date: customDate || 'Fulbaana 06, 2017 A.L.I',
+          rationale: `Barnoonni kun barattoonni waa'ee ${topic || 'barnootichaa'} sirriitti akka hubatan gargaara.`,
+          prerequisiteKnowledge: 'Barattoonni kanaan dura yaada bu\'uuraa barataniiru.',
+          competencies: `Dhuma barnoota kanaatti barattoonni waa'ee ${topic || 'mata duree kanaa'} ibsuu fi shaakaluu ni danda'u.`,
+          stages: [
+            {
+              stage: 'Starter (Qophii fi Yaada Ka\'umsaa)',
+              timeAllotment: '5 daqiiqaa',
+              learningContents: `Yaada ka'umsaa waa'ee ${topic || 'barnootaa'}`,
+              page: '1-5',
+              teacherActivities: 'Barsiisaan nagaa gaafata, barnoota darbe yaadachiisa, mata duree har\'aa beeksisa.',
+              studentActivities: 'Barattoonni nagaa deebisu, gaaffii ka\'umsaa deebisu.',
+              assessmentTechniques: 'Gaaffii afaanii',
+              teachingAids: 'Kitaaba barataa, kaardii fiilashii',
+              remarks: '-',
+            },
+            {
+              stage: 'Main Activities (Gochaalee Gurguddoo)',
+              timeAllotment: '25 daqiiqaa',
+              learningContents: `Ibsa fi shaakala waa'ee '${topic || 'barnootichaa'}'`,
+              page: '1-5',
+              teacherActivities: `Barsiisaan fakkeenyaan ibsa, barattoota hirmaachisa, hojii daree hordofa.`,
+              studentActivities: 'Xiyyeeffannoon dhaggeeffatu, daftara irratti barreessu, hojii daree hojjatu.',
+              assessmentTechniques: 'Hojii daree, gaaffii afaanii',
+              teachingAids: 'Kitaaba barataa, fakkiiwwan, gabatee gurraacha',
+              remarks: '-',
+            },
+            {
+              stage: 'Concluding Activities (Gochaalee Xumuraa)',
+              timeAllotment: '5 daqiiqaa',
+              learningContents: 'Cuunfaa fi hojii manaa',
+              page: '-',
+              teacherActivities: 'Qabxiilee gurguddoo cuunfa, hojii manaa kenna.',
+              studentActivities: 'Gaaffii xumuraa deebisu, hojii manaa galmeeffatu.',
+              assessmentTechniques: 'Gaaffii afaanii',
+              teachingAids: '-',
+              remarks: '-',
+            },
+          ],
+          specialNeedsSupport: {
+            slowLearners: 'Deeggarsa dhuunfaa, ibsa dabalataa fi hiriyaa dareetiin gargaaruu.',
+            mediumLearners: 'Hojii daree idilee fi hordoffii walirraa hin cinne gochuu.',
+            fastLearners: 'Gaaffiiwwan qormaataa fi hojiiwwan dabalataa kennuu.',
+          },
+          deptHeadName: '',
+          vicePrincipalName: '',
+          postLessonAssessment: '',
+        };
+      } else if (isAmharic) {
         planData = {
           schoolName,
           teacherName,
@@ -836,7 +899,6 @@ ${isOromic ? `{
     try {
       rawResponse = await generateGeminiContent({
         contents: prompt,
-        temperature: 0.4,
       });
 
       const cleanJson = rawResponse
@@ -847,7 +909,9 @@ ${isOromic ? `{
       planData = JSON.parse(cleanJson);
     } catch (parseErr) {
       console.warn('Failed to parse 5-day plan JSON from Gemini, generating curriculum fallback');
-      const dayNames = isAmharic
+      const dayNames = isOromic
+        ? ['Guyyaa 1 (Wiixata)', 'Guyyaa 2 (Kibxata)', 'Guyyaa 3 (Roobii)', 'Guyyaa 4 (Kamisa)', 'Guyyaa 5 (Jimaata)']
+        : isAmharic
         ? ['ቀን 1 (ሰኞ)', 'ቀን 2 (ማክሰኞ)', 'ቀን 3 (ረቡዕ)', 'ቀን 4 (ሐሙስ)', 'ቀን 5 (አርብ)']
         : ['Day 1 (Monday)', 'Day 2 (Tuesday)', 'Day 3 (Wednesday)', 'Day 4 (Thursday)', 'Day 5 (Friday)'];
 
@@ -915,6 +979,7 @@ app.post('/api/quick-quiz-generator', async (req: Request, res: Response) => {
     const totalQ = numQuestions || 10;
 
     const effectiveLang = resolveCurriculumLanguage(subject, gradeLevel, language);
+    const isOromic = effectiveLang === 'Afaan Oromoo';
     const isAmharic = effectiveLang === 'Amharic';
 
     const prompt = `You are generating an instant classroom assessment based on a single word or topic for an Ethiopian primary school teacher.
@@ -923,7 +988,17 @@ ETHIOPIAN CURRICULUM MEDIUM OF INSTRUCTION:
 - Subject: "${subject || 'General'}"
 - Grade Level: "${gradeLevel || 'Grade 4'}"
 - Required Language: "${effectiveLang.toUpperCase()}"
-${isAmharic ? `[AMHARIC MEDIUM - GRADES 1-6 (Or Amharic Subject)]:
+${isOromic ? `[AFAAN OROMOO MEDIUM - OROMIA / ETHIOPIAN CURRICULUM]:
+The ENTIRE quiz paper MUST be written in natural, accurate AFAAN OROMOO (Qubee Afaan Oromoo).
+- Header: "${schoolName}"
+- Title: Madaallii / Qormaata Gabaabaa ${subject} Mata Duree "${wordOrTopic}"
+- Student Info: Maqaa Barataa: ______________ Kutaa: ${gradeLevel} Lakk: ___ Guyyaa: _________ [ Qabxii: _____ / 100 ]
+- Clear instructions in Afaan Oromoo (Qajeelfama)
+- Part I: Filannoo (Multiple choice A, B, C, D)
+- Part II: Bakka Duwwaa Guuti (Fill in blanks)
+- Part III: Dhugaa yookiin Soba (True or False)
+- Part IV: Walitti Firoomsii ykn Deebii Gabaabaa (Matching or Short answer)
+- Complete Answer Key under [FURMAATA / ANSWER KEY] with explanations in Afaan Oromoo.` : isAmharic ? `[AMHARIC MEDIUM - GRADES 1-6 (Or Amharic Subject)]:
 The ENTIRE quiz paper MUST be written in natural AMHARIC SCRIPT (በአማርኛ ቋንቋና በግዕዝ ፊደላት).
 - Header in Amharic: "${schoolName}"
 - Title: የ${subject} ምዘና ፈተና በርዕስ "${wordOrTopic}"
@@ -953,7 +1028,6 @@ Create a clean, ready-to-print assessment paper matching the language above.`;
 
     const text = await generateGeminiContent({
       contents: prompt,
-      temperature: 0.5,
     });
 
     res.json({ content: text, language: effectiveLang });
@@ -979,10 +1053,11 @@ app.post('/api/generate-worksheet', async (req: Request, res: Response) => {
       language,
     } = req.body;
 
-    const schoolName = schoolProfile?.schoolName || schoolProfile?.amharicSchoolName || 'Primary School';
+    const schoolName = schoolProfile?.schoolName || schoolProfile?.amharicSchoolName || 'Meskerem pre-primary , primary and medium school';
     const teacherName = schoolProfile?.teacherName || '';
 
     const effectiveLang = resolveCurriculumLanguage(subject, gradeLevel, language);
+    const isOromic = effectiveLang === 'Afaan Oromoo';
     const isAmharic = effectiveLang === 'Amharic';
 
     const prompt = `Generate a classroom-ready student worksheet & exam paper for an Ethiopian primary school.
@@ -991,7 +1066,12 @@ ETHIOPIAN CURRICULUM MEDIUM OF INSTRUCTION:
 - Subject: ${subject || 'General Subject'}
 - Grade Level: ${gradeLevel || 'Grade 5'}
 - Language: ${effectiveLang.toUpperCase()}
-${isAmharic ? `[AMHARIC MEDIUM - GRADES 1-6 (Or Amharic Subject)]:
+${isOromic ? `[AFAAN OROMOO MEDIUM]:
+The ENTIRE worksheet MUST be written in natural AFAAN OROMOO (Qubee Afaan Oromoo).
+- Header: "${schoolName} - ${subject}"
+- Student Info: "Maqaa Barataa: ______________ Kutaa: ${gradeLevel} Guyyaa: ________ Qabxii: ___/100"
+- Clean numbered sections in Afaan Oromoo (Kutaa I: Filannoo, Kutaa II: Bakka Duwwaa Guuti, Kutaa III: Walitti Firoomsii, Kutaa IV: Dhugaa ykn Soba, Kutaa V: Deebii Gabaabaa)
+- Answer Key at the end in Afaan Oromoo under [FURMAATA / ANSWER KEY] ONLY if Include Answer Key is Yes.` : isAmharic ? `[AMHARIC MEDIUM - GRADES 1-6 (Or Amharic Subject)]:
 The ENTIRE worksheet MUST be written in AMHARIC (በአማርኛ ቋንቋና በግዕዝ ፊደላት).
 - Header: "${schoolName} - ${subject}"
 - Student Info: "የተማሪው ስም፡ ______________ ክፍል፡ ${gradeLevel}  ቀን፡ ________ ውጤት፡ ___/100"
@@ -1001,12 +1081,12 @@ The ENTIRE worksheet MUST be written in AMHARIC (በአማርኛ ቋንቋና �
   ክፍል ፫: አዛምድ (Matching Columns)
   ክፍል ፬: እውነት ወይም ሐሰት (True/False)
   ክፍል ፭: አጭር መልስ (Short Answer)
-- Answer Key at the end in Amharic under [የመልስ ቁልፍ (ANSWER KEY)].` : `[ENGLISH MEDIUM - GRADES 7 & 8 (Or English Subject)]:
+- Answer Key at the end in Amharic under [የመልስ ቁልፍ (ANSWER KEY)] ONLY if Include Answer Key is Yes.` : `[ENGLISH MEDIUM - GRADES 7 & 8 (Or English Subject)]:
 The ENTIRE worksheet MUST be written in ENGLISH.
 - Header: "${schoolName} - ${subject}"
 - Student Info: "Student Name: ______________ Grade: ${gradeLevel}  Date: ________ Score: ___/100"
 - Clean numbered sections (Part I: Multiple Choice, Part II: Fill in the blank, Part III: Matching, Part IV: True/False, Part V: Short Answer)
-- Answer Key at the end under [ANSWER KEY].`}
+- Answer Key at the end under [ANSWER KEY] ONLY if Include Answer Key is Yes.`}
 
 School: ${schoolName} ${teacherName ? `(Teacher: ${teacherName})` : ''}
 Assessment Title: ${title || 'Classroom Assessment'}
@@ -1020,7 +1100,6 @@ Ensure all questions strictly match Ethiopian curriculum benchmarks.`;
 
     const text = await generateGeminiContent({
       contents: prompt,
-      temperature: 0.6,
     });
 
     res.json({ content: text, language: effectiveLang });
@@ -1048,7 +1127,6 @@ Provide:
 
     const text = await generateGeminiContent({
       contents: prompt,
-      temperature: 0.5,
     });
 
     res.json({ content: text });
@@ -1079,7 +1157,6 @@ Include:
 
     const text = await generateGeminiContent({
       contents: prompt,
-      temperature: 0.8,
     });
 
     res.json({ content: text });
@@ -1113,7 +1190,6 @@ Please provide a pedagogical teacher evaluation:
 
     const text = await generateGeminiContent({
       contents: prompt,
-      temperature: 0.4,
     });
 
     res.json({ content: text });
@@ -1141,7 +1217,6 @@ Please output:
 
     const result = await generateGeminiContent({
       contents: prompt,
-      temperature: 0.4,
     });
 
     res.json({ content: result });
@@ -1222,7 +1297,6 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     const text = await generateGeminiContent({
       contents: formattedHistory,
       systemInstruction: SYSTEM_PROMPT_EDUCATOR + '\nBe an attentive, friendly, and deeply encouraging pedagogical advisor for teachers and students.',
-      temperature: 0.7,
     });
 
     res.json({ text });
@@ -1252,7 +1326,7 @@ async function startServer() {
   }
 
   app.listen(PORT, () => {
-    console.log(`Amharic Teacher Helper AI Server running on http://localhost:${PORT}`);
+    console.log(`Meskerem school ai Server running on http://localhost:${PORT}`);
   });
 }
 

@@ -11,12 +11,12 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
+        includeAssets: ['favicon-64x64.png', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
           id: '/',
-          name: 'Ethiopian MoE Primary Assistant',
-          short_name: 'MoE Teacher',
-          description: 'Official Ethiopian Ministry of Education Primary School Assistant for Teachers and Students.',
+          name: 'Meskerem school ai',
+          short_name: 'Meskerem AI',
+          description: 'Meskerem school ai — Ethiopian pre-primary, primary, and medium school AI assistant for teachers and students.',
           theme_color: '#047857',
           background_color: '#f8fafc',
           display: 'standalone',
@@ -45,6 +45,7 @@ export default defineConfig(() => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         },
         devOptions: {
           enabled: true,
@@ -54,7 +55,7 @@ export default defineConfig(() => {
     ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname, '.'),
       },
     },
     server: {

@@ -90,17 +90,16 @@ export const EducatorChat: React.FC<{ onOpenKeyboard: () => void }> = ({ onOpenK
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm flex flex-col h-[750px] overflow-hidden">
+    <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm flex flex-col h-[calc(100dvh-14rem)] min-h-[440px] max-h-[760px] overflow-hidden">
       {/* Chat Header */}
-      <div className="p-4 border-b border-stone-200 flex items-center justify-between bg-stone-50/70">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white shadow-sm">
+      <div className="p-4 border-b border-stone-200 flex flex-wrap items-center justify-between gap-2 bg-stone-50/70">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white shadow-sm shrink-0">
             <Bot className="w-5 h-5" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="font-bold text-stone-900 text-sm font-amharic flex items-center gap-2">
-              መምህር አማካሪ (Amharic AI Mentor)
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="truncate">መምህር አማካሪ (Amharic AI Mentor)</span>
             </h3>
             <p className="text-xs text-stone-500">24/7 Unlimited Pedagogical & Curriculum Advisor</p>
           </div>
@@ -108,7 +107,7 @@ export const EducatorChat: React.FC<{ onOpenKeyboard: () => void }> = ({ onOpenK
 
         <button
           onClick={onOpenKeyboard}
-          className="px-3 py-1.5 text-xs font-semibold bg-white hover:bg-stone-100 text-stone-700 rounded-lg border border-stone-300 transition"
+          className="px-3 py-1.5 text-xs font-semibold bg-white hover:bg-stone-100 text-stone-700 rounded-lg border border-stone-300 transition shrink-0"
         >
           ⌨️ Fidel Pad
         </button>

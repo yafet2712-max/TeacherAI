@@ -109,9 +109,9 @@ export const FidelChart: React.FC = () => {
 
       {/* Selected Char Detail Popover if active */}
       {selectedCharDetail && (
-        <div className="bg-stone-900 text-stone-100 p-4 rounded-2xl shadow-xl flex items-center justify-between gap-4 animate-fadeIn no-print border border-amber-500/40">
+        <div className="bg-stone-900 text-stone-100 p-4 rounded-2xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fadeIn no-print border border-amber-500/40">
           <div className="flex items-center gap-4">
-            <div className="text-4xl font-amharic font-black text-amber-400 bg-stone-800 w-16 h-16 rounded-xl flex items-center justify-center border border-stone-700">
+            <div className="text-4xl font-amharic font-black text-amber-400 bg-stone-800 w-16 h-16 rounded-xl flex items-center justify-center border border-stone-700 shrink-0">
               {selectedCharDetail.char}
             </div>
             <div>
@@ -124,7 +124,7 @@ export const FidelChart: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => handlePronounce(selectedCharDetail.char)}
               disabled={playingChar === selectedCharDetail.char}
@@ -185,7 +185,7 @@ export const FidelChart: React.FC = () => {
                       </div>
                       <button
                         onClick={(e) => handlePronounce(row.order1, e)}
-                        className="p-1 text-stone-400 hover:text-amber-600 opacity-0 group-hover:opacity-100 transition no-print"
+                        className="p-1 text-stone-400 hover:text-amber-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition no-print"
                         title="Listen to row sound"
                       >
                         <Volume2 className="w-3.5 h-3.5" />
@@ -207,7 +207,7 @@ export const FidelChart: React.FC = () => {
                     const isPlaying = playingChar === cell.char;
                     return (
                       <td
-                        key={cell.char}
+                        key={`${row.name}-${cell.orderNum}`}
                         onClick={() =>
                           setSelectedCharDetail({
                             char: cell.char,

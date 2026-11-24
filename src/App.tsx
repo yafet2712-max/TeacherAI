@@ -17,18 +17,18 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { MarkListTools } from './components/MarkListTools';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { AppTab, SavedMaterial, SchoolProfile } from './types';
-import { ShieldCheck, School, Sparkles, BookOpen, Zap } from 'lucide-react';
+import { School, Sparkles, BookOpen } from 'lucide-react';
 
 const STORAGE_KEY = 'amharic_teacher_helper_saved_v2';
 const SCHOOL_PROFILE_KEY = 'amharic_teacher_helper_school_profile_v1';
 
 const DEFAULT_SCHOOL_PROFILE: SchoolProfile = {
-  schoolName: 'Dil-Betigl Primary School',
-  amharicSchoolName: 'ድል-በትግል የመጀመሪያ ደረጃ ትምህርት ቤት',
-  woredaSubcity: 'Yeka Sub-City, Woreda 08',
-  cityRegion: 'Addis Ababa',
+  schoolName: 'Meskerem pre-primary , primary and medium school',
+  amharicSchoolName: 'መስከረም ቅድመ-መጀመሪያ፣ መጀመሪያ እና መካከለኛ ደረጃ ትምህርት ቤት',
+  woredaSubcity: 'Addis Ababa',
+  cityRegion: 'Ethiopia',
   teacherName: '',
-  department: 'Primary Education Department',
+  department: 'Pre-Primary, Primary & Medium Education',
   motto: 'Striving for Quality Education / ለላቀ የትምህርት ጥራት እንተጋለን',
 };
 
@@ -38,20 +38,26 @@ export default function App() {
   const [isSchoolModalOpen, setIsSchoolModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Premium Subscriptions State for the 5 Requested Features
-  // 1. School Name Settings (የትምህርት ቤት ስም ቀይር)
-  // 2. Worksheet Maker / Quizzes (ፈተና መልመጃ)
-  // 3. Assignment Grader (ጽሁፍ ገምጋሚ)
-  // 4. AI Mentor Chat (መምህር አማካሪ)
-  // 5. 5-Days Weekly Plan (የ5 ቀናት ሳምንታዊ እቅድ - 1 free trial allowed)
+  // Premium Subscriptions State + 30-Day Expiration Tracking
   const [unlockedFeatures, setUnlockedFeatures] = useState<Record<string, boolean>>(() => {
     try {
       const data = localStorage.getItem('teacher_helper_unlocked_features_v1');
-      return data ? JSON.parse(data) : { school: false, worksheet: false, grader: false, mentor: false, fiveDays: false };
+      return data ? JSON.parse(data) : {};
     } catch {
-      return { school: false, worksheet: false, grader: false, mentor: false, fiveDays: false };
+      return {};
     }
   });
+
+  const [featureExpirations, setFeatureExpirations] = useState<Record<string, number>>(() => {
+    try {
+      const data = localStorage.getItem('teacher_helper_feature_expirations_v1');
+      return data ? JSON.parse(data) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [expiredNotice, setExpiredNotice] = useState<string | null>(null);
 
   const [fiveDaysTrialUsed, setFiveDaysTrialUsed] = useState<boolean>(() => {
     return localStorage.getItem('teacher_helper_5days_trial') === 'true';
@@ -70,10 +76,49 @@ export default function App() {
     }
   }, [unlockedFeatures]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('teacher_helper_feature_expirations_v1', JSON.stringify(featureExpirations));
+    } catch (e) {
+      console.warn('Failed to save feature expirations', e);
+    }
+  }, [featureExpirations]);
+
+  // Check 30-day subscription expirations on load
+  useEffect(() => {
+    const now = Date.now();
+    const expiredKeys: string[] = [];
+    Object.keys(unlockedFeatures).forEach((key) => {
+      if (unlockedFeatures[key] && featureExpirations[key] && now > featureExpirations[key]) {
+        expiredKeys.push(key);
+      }
+    });
+    if (expiredKeys.length > 0) {
+      setUnlockedFeatures((prev) => {
+        const next = { ...prev };
+        expiredKeys.forEach((k) => {
+          next[k] = false;
+        });
+        return next;
+      });
+      setExpiredNotice(
+        `⏰ የ1 ወር (30 ቀናት) የደንበኝነት አገልግሎት ጊዜዎ አብቅቷል (${expiredKeys.join(', ')})። ለማደስ በቴሌብር (+251956263882) ከፍለው ለ @zenayafet ይላኩ።`
+      );
+    }
+  }, []);
+
   const requirePremium = (featureKey: string, serviceTitle: string, onProceed: () => void) => {
+    const exp = featureExpirations[featureKey];
     if (unlockedFeatures[featureKey]) {
-      onProceed();
-      return;
+      if (exp && Date.now() > exp) {
+        setUnlockedFeatures((prev) => ({ ...prev, [featureKey]: false }));
+        setExpiredNotice(
+          `⏰ የ"${serviceTitle}" የ1 ወር (30 ቀናት) አገልግሎት ጊዜ አብቅቷል። ለመቀጠል በቴሌብር 50 ብር በመክፈል ያድሱ።`
+        );
+      } else {
+        onProceed();
+        return;
+      }
     }
 
     // Special rule for 5th option (5-days plan): 1 free trial allowed
@@ -85,17 +130,14 @@ export default function App() {
       return;
     }
 
-    // Otherwise require 50 ETB Telebirr payment
+    // Otherwise require 50 ETB Telebirr payment & Owner Admin approval
     setActiveServiceName(serviceTitle);
     setPendingFeatureKey(featureKey);
     setPremiumModalOpen(true);
   };
 
-  const handlePaymentSuccess = () => {
-    if (pendingFeatureKey) {
-      setUnlockedFeatures((prev) => ({ ...prev, [pendingFeatureKey]: true }));
-      showToast(`🎉 እንኳን ደስ አሎት! "${activeServiceName}" አገልግሎት በቴሌብር ክፍያ ተከፍቷል። (Unlocked!)`);
-    }
+  const handlePaymentSubmitted = (req: { id: string; serviceTitle: string }) => {
+    showToast(`📩 ጥያቄ (${req.id}) ተልኳል! የክፍያ Screenshot በቴሌግራም @zenayafet ይላኩ። ባለቤቱ ሲያጸድቀው ይከፈታል።`);
     setPendingFeatureKey(null);
   };
 
@@ -109,7 +151,25 @@ export default function App() {
   const [schoolProfile, setSchoolProfile] = useState<SchoolProfile>(() => {
     try {
       const data = localStorage.getItem(SCHOOL_PROFILE_KEY);
-      return data ? JSON.parse(data) : DEFAULT_SCHOOL_PROFILE;
+      if (!data) return DEFAULT_SCHOOL_PROFILE;
+      const parsed: SchoolProfile = JSON.parse(data);
+      if (
+        !parsed.schoolName ||
+        parsed.schoolName === 'Dil-Betigl Primary School'
+      ) {
+        const migrated: SchoolProfile = {
+          ...DEFAULT_SCHOOL_PROFILE,
+          ...parsed,
+          schoolName: DEFAULT_SCHOOL_PROFILE.schoolName,
+          amharicSchoolName:
+            parsed.amharicSchoolName === 'ድል-በትግል የመጀመሪያ ደረጃ ትምህርት ቤት' || !parsed.amharicSchoolName
+              ? DEFAULT_SCHOOL_PROFILE.amharicSchoolName
+              : parsed.amharicSchoolName,
+        };
+        localStorage.setItem(SCHOOL_PROFILE_KEY, JSON.stringify(migrated));
+        return migrated;
+      }
+      return parsed;
     } catch {
       return DEFAULT_SCHOOL_PROFILE;
     }
@@ -176,10 +236,6 @@ export default function App() {
       requirePremium('mentor', 'መምህር አማካሪ (AI Teacher Advisor & Mentor)', () => setCurrentTab(tab));
       return;
     }
-    if (tab === 'mark-list-tools') {
-      requirePremium('worksheet', 'የውጤት መዝገብ እና ፎርማቶች (Mark List & Formats)', () => setCurrentTab(tab));
-      return;
-    }
     setCurrentTab(tab);
   };
 
@@ -202,7 +258,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50 text-stone-900 font-sans">
+    <div className="min-h-screen w-full overflow-x-hidden flex flex-col bg-stone-50 text-stone-900 font-sans">
       {/* Ethiopian Tricolor Accent Ribbon */}
       <div className="h-1.5 w-full flex no-print">
         <div className="flex-1 bg-emerald-600"></div>
@@ -220,49 +276,62 @@ export default function App() {
         schoolProfile={schoolProfile}
         onOpenSchoolSettings={handleOpenSchoolModal}
         onOpenAdminDashboard={() => setIsAdminDashboardOpen(true)}
-        publishedUrl="https://ais-pre-ggmao2jh2kg5djgbq7rjc7-389524282416.europe-west2.run.app"
+        publishedUrl={PUBLISHED_URL}
       />
 
       {/* Teacher Workplace Welcome Strip */}
-      <div className="bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 text-white py-2.5 px-4 shadow-sm no-print">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs gap-2">
-          <div className="flex items-center gap-2">
-            <School className="w-4 h-4 text-amber-200" />
-            <span>
-              የትምህርት ቤትዎ ስም: <strong className="text-amber-100 font-bold">{schoolProfile.schoolName}</strong>
-              {schoolProfile.amharicSchoolName ? ` (${schoolProfile.amharicSchoolName})` : ''}
-            </span>
-            <span className="hidden lg:inline bg-emerald-500/30 text-emerald-100 px-2 py-0.5 rounded-full text-[10px] font-bold border border-emerald-400/40">
-              ✓ .Docx Download Active
+      <div className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white py-2 px-3 sm:px-6 lg:px-8 shadow-sm no-print">
+        <div className="w-full max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between text-xs gap-2">
+          <div className="flex items-center gap-2 text-center sm:text-left min-w-0">
+            <School className="w-4 h-4 text-amber-300 shrink-0" />
+            <span className="truncate">
+              School: <strong className="text-amber-200 font-bold">{schoolProfile.schoolName}</strong>
+              {schoolProfile.amharicSchoolName ? (
+                <span className="hidden xl:inline text-emerald-100/90 font-amharic">
+                  {' '}({schoolProfile.amharicSchoolName})
+                </span>
+              ) : null}
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <span className="text-amber-200 hidden md:inline">
-              {schoolProfile.woredaSubcity || schoolProfile.cityRegion}
-            </span>
+          <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
             <button
               onClick={() => {
                 navigator.clipboard.writeText(PUBLISHED_URL);
-                showToast('🔗 የተጋራው የድረ-ገጽ ሊንክ ተቀድቷል! (Published app link copied to clipboard!)');
+                showToast('🔗 የተጋራው የድረ-ገጽ ሊንክ ተቀድቷል! (App link copied to clipboard)');
               }}
-              className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg transition font-bold shadow-sm flex items-center gap-1.5"
+              className="px-3 py-1 bg-amber-400 hover:bg-amber-300 text-stone-950 rounded-lg transition font-bold shadow-xs whitespace-nowrap"
               title="Copy published link to share with other teachers"
             >
-              <span>🔗 ሊንኩን ቅዳ (Copy Published Link)</span>
+              🔗 Share App Link
             </button>
             <button
               onClick={handleOpenSchoolModal}
-              className="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg transition font-semibold"
+              className="px-3 py-1 bg-white/15 hover:bg-white/25 text-white rounded-lg transition font-semibold whitespace-nowrap border border-white/20"
             >
-              የትምህርት ቤት ስም ቀይር (Edit School)
+              ✏️ Edit School
             </button>
           </div>
         </div>
       </div>
 
+      {/* 30-Day Subscription Expiration Notification */}
+      {expiredNotice && (
+        <div className="bg-rose-600 text-white px-4 py-3 text-xs font-bold no-print">
+          <div className="w-full max-w-[1600px] mx-auto flex items-center justify-between gap-3">
+            <span>{expiredNotice}</span>
+            <button
+              onClick={() => setExpiredNotice(null)}
+              className="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-[11px] shrink-0"
+            >
+              ዝጋ (Dismiss)
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Content Viewport */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-28">
+      <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-6 pb-24">
         {currentTab === 'lesson-planner' && (
           <LessonPlanner
             schoolProfile={schoolProfile}
@@ -363,7 +432,7 @@ export default function App() {
       <TelebirrModal
         isOpen={premiumModalOpen}
         onClose={() => setPremiumModalOpen(false)}
-        onSuccess={handlePaymentSuccess}
+        onSubmitted={handlePaymentSubmitted}
         serviceTitle={activeServiceName}
         featureKey={pendingFeatureKey || 'general'}
       />
@@ -372,45 +441,54 @@ export default function App() {
       <AdminDashboard
         isOpen={isAdminDashboardOpen}
         onClose={() => setIsAdminDashboardOpen(false)}
-        onUpdateStatus={(id, status) => {
-          if (status === 'approved') {
-            showToast('✅ የክፍያ ጥያቄ በባለቤቱ ጸድቋል! (Approved by owner)');
+        onUpdateStatus={(_id, status, updatedReq) => {
+          if (updatedReq) {
+            if (status === 'approved') {
+              setUnlockedFeatures((prev) => ({ ...prev, [updatedReq.featureKey]: true }));
+              if (updatedReq.expiresAt) {
+                setFeatureExpirations((prev) => ({ ...prev, [updatedReq.featureKey]: updatedReq.expiresAt! }));
+              }
+              showToast(`✅ "${updatedReq.serviceTitle}" ለ30 ቀናት በባለቤቱ ተፈቅዷል! (Approved for 30 days)`);
+            } else if (status === 'rejected') {
+              setUnlockedFeatures((prev) => ({ ...prev, [updatedReq.featureKey]: false }));
+              showToast(`⛔ "${updatedReq.serviceTitle}" ጥያቄ በባለቤቱ ታግዷል። (Blocked)`);
+            }
           }
         }}
       />
 
       {/* Footer */}
-      <footer className="bg-white border-t border-stone-200 mt-auto py-8 text-xs text-stone-600 no-print">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="font-amharic font-bold text-stone-800 text-sm">
-                {schoolProfile.schoolName || 'የአማርኛ እና የመጀመሪያ ደረጃ መምህር ረዳት'}
+      <footer className="bg-white border-t border-stone-200 mt-auto py-6 text-xs text-stone-600 no-print">
+        <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 space-y-3">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+              <span className="font-bold text-stone-900 text-sm">
+                Meskerem school ai
               </span>
-              <span>•</span>
-              <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" /> ነጻ እና ገደብ የሌለው (Free & Unlimited)
+              <span className="text-stone-300">•</span>
+              <span className="font-amharic font-semibold text-emerald-800">
+                {schoolProfile.schoolName}
               </span>
             </div>
 
-            <div className="flex items-center gap-4 text-[11px] text-stone-500">
-              <span>Ethiopian MoE Curriculum Standards (Grade 1–8)</span>
-              <span>•</span>
-              <span>All Primary Subjects</span>
-              <span>•</span>
-              <span>Print-Ready Classroom Materials</span>
+            <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-stone-500">
+              <span className="inline-flex items-center gap-1">
+                <BookOpen className="w-3.5 h-3.5 text-emerald-700" /> Ethiopian MoE Curriculum (Pre-Primary – Grade 8)
+              </span>
+              <span className="hidden sm:inline">•</span>
+              <span>Print & Export Ready</span>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
-            <div className="font-semibold text-stone-800 flex items-center gap-1.5">
+          <div className="pt-3 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px]">
+            <div className="font-semibold text-stone-800 flex flex-wrap items-center justify-center gap-1.5">
               <span>Copyright ©️ {new Date().getFullYear()}</span>
               <span className="font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                 Zenaneh Tsegaye
               </span>
-              <span>• All rights reserved. • የቅጂ መብት ©️ ዜናነህ ፀጋዬ</span>
+              <span>• የቅጂ መብት ©️ ዜናነህ ፀጋዬ</span>
             </div>
-            <div className="text-stone-400">
+            <div className="text-stone-500">
               ለኢትዮጵያ መምህራን እና ተማሪዎች በክብር የተዘጋጀ
             </div>
           </div>
@@ -422,7 +500,7 @@ export default function App() {
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-stone-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-stone-700 animate-bounce duration-300">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md z-50 bg-stone-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-stone-700 transition-all duration-300">
           <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
           <span className="text-xs font-semibold">{toastMessage}</span>
         </div>

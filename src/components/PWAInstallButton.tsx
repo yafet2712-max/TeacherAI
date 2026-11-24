@@ -16,11 +16,11 @@ export const PWAInstallButton: React.FC = () => {
     return (
       <button
         onClick={install}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors border border-emerald-500"
-        title="Install as Phone/Desktop Application (መተግበሪያውን በስልክዎ/ኮምፒውተርዎ ላይ ይጫኑ)"
+        className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors border border-emerald-500 whitespace-nowrap shrink-0"
+        title="Install Meskerem school ai on your device"
       >
         <Download className="w-3.5 h-3.5" />
-        <span>Install App (መተግበሪያ ጫን)</span>
+        <span className="hidden sm:inline">Install App</span>
       </button>
     );
   }
@@ -30,16 +30,16 @@ export const PWAInstallButton: React.FC = () => {
     <>
       <button
         onClick={() => setShowGuide(true)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-medium border border-emerald-200 transition-colors"
-        title="How to install as App on your phone / desktop"
+        className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold border border-emerald-200 transition-colors whitespace-nowrap shrink-0"
+        title="How to install Meskerem school ai on your phone / desktop"
       >
         <Smartphone className="w-3.5 h-3.5 text-emerald-700" />
-        <span>Install App</span>
+        <span className="hidden sm:inline">Install</span>
       </button>
 
       {showGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 no-print animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-stone-200 relative text-stone-800 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 no-print">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl border border-stone-200 relative text-stone-800 space-y-4">
             <button
               onClick={() => setShowGuide(false)}
               className="absolute top-4 right-4 p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition"
@@ -49,15 +49,18 @@ export const PWAInstallButton: React.FC = () => {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md">
-                <img src="/icon.svg" alt="App Icon" className="w-9 h-9" />
-              </div>
+              <img
+                src="/assets/aistudio/learning-management-system-for-school-8663453-6967857_4c5fb857.png"
+                alt="Meskerem school ai icon"
+                referrerPolicy="no-referrer"
+                className="w-12 h-12 rounded-xl object-contain bg-white border border-stone-200 p-1 shadow-sm shrink-0"
+              />
               <div>
                 <h3 className="text-base font-bold text-stone-900">
-                  Install as Application (መተግበሪያ ይጫኑ)
+                  Install App (መተግበሪያ ይጫኑ)
                 </h3>
                 <p className="text-xs text-stone-500">
-                  Ethiopian MoE Primary Assistant
+                  Meskerem school ai
                 </p>
               </div>
             </div>

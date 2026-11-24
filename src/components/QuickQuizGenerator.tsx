@@ -148,7 +148,7 @@ export const QuickQuizGenerator: React.FC<QuickQuizGeneratorProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             onClick={onOpenSchoolSettings}
             className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl transition"
@@ -316,16 +316,15 @@ export const QuickQuizGenerator: React.FC<QuickQuizGeneratorProps> = ({
           </div>
         )}
 
-        <div className="pt-2 flex items-center justify-between">
-          <div className="text-xs text-stone-500 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>Branded for: <strong>{schoolProfile.schoolName}</strong></span>
+        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="text-xs text-stone-500">
+            Branded for: <strong>{schoolProfile.schoolName}</strong>
           </div>
 
           <button
             onClick={() => handleGenerate()}
             disabled={loading || !wordOrTopic.trim()}
-            className="flex items-center gap-2 px-7 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold rounded-2xl transition shadow-lg shadow-amber-600/25 disabled:opacity-50 text-sm"
+            className="flex items-center justify-center gap-2 px-7 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold rounded-2xl transition shadow-lg shadow-amber-600/25 disabled:opacity-50 text-sm"
           >
             {loading ? (
               <>
@@ -346,16 +345,15 @@ export const QuickQuizGenerator: React.FC<QuickQuizGeneratorProps> = ({
       {quizContent && (
         <div className="bg-white rounded-3xl border border-stone-200 shadow-xl overflow-hidden printable-area">
           {/* Top Actions Bar (Hidden when printing) */}
-          <div className="bg-stone-50 border-b border-stone-200 px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 no-print">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          <div className="bg-stone-50 border-b border-stone-200 px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 no-print">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="font-bold text-stone-800 text-sm">ፈተናው ዝግጁ ነው (Assessment Ready)</span>
               <span className="text-xs text-stone-500">
                 ({currentSubjectObj?.nameEn} • {gradeLevel} • {numQuestions} Questions)
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setShowAnswerKey(!showAnswerKey)}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl transition"
@@ -431,7 +429,7 @@ export const QuickQuizGenerator: React.FC<QuickQuizGeneratorProps> = ({
 
               {/* Student Header and Score Box */}
               <div className="mt-5 pt-3 border-t border-dashed border-stone-400 flex flex-wrap items-center justify-between text-xs text-stone-800 gap-3">
-                <div className="text-left space-y-1.5 flex-1 min-w-[260px]">
+                <div className="text-left space-y-1.5 flex-1 min-w-0 sm:min-w-[260px]">
                   <p>Student Name (የተማሪው ስም): ________________________________________</p>
                   <p>Grade / Section (ክፍል/ሴክሽን): ____________  Date (ቀን): __________________</p>
                 </div>

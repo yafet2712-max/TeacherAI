@@ -1,6 +1,6 @@
 {
-  "name": "Amharic Teacher Helper AI - የፊደል እና ትምህርት ረዳት",
-  "description": "Free and unlimited AI assistant for Amharic teachers and students. Generate lesson plans, worksheets, quizzes, Fidel charts, grammar drills, stories, and audio pronunciations.",
+  "name": "Meskerem school ai",
+  "description": "Meskerem school ai — Ethiopian pre-primary, primary, and medium school AI assistant for lesson plans, quizzes, worksheets, Fidel charts, mark lists, and classroom tools.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

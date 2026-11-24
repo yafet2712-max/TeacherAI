@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, CheckCircle2, XCircle, Clock, Trash2, Key, Phone, ExternalLink, X, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Trash2, Key, Phone, ExternalLink, X, AlertTriangle } from 'lucide-react';
 
 export interface SubscriptionRequest {
   id: string;
@@ -16,7 +16,11 @@ export interface SubscriptionRequest {
 interface AdminDashboardProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpdateStatus: (requestId: string, status: 'approved' | 'rejected' | 'pending') => void;
+  onUpdateStatus: (
+    requestId: string,
+    status: 'approved' | 'rejected' | 'pending',
+    updatedRequest?: SubscriptionRequest
+  ) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose, onUpdateStatus }) => {
@@ -25,6 +29,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
   const [error, setError] = useState<string | null>(null);
   const [requests, setRequests] = useState<SubscriptionRequest[]>([]);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('pending');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -49,8 +54,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Default admin PIN: zena1221, 1234, or phone suffix 3882
-    if (pin === 'zena1221' || pin === '1234' || pin === '3882' || pin === '2017') {
+    if (pin.trim() === 'zena1221') {
       setIsAuthenticated(true);
       setError(null);
       loadRequests();
@@ -61,32 +65,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
 
   const handleStatusChange = (id: string, newStatus: 'approved' | 'rejected' | 'pending') => {
     try {
+      let targetRequest: SubscriptionRequest | undefined;
       const updated = requests.map((req) => {
         if (req.id === id) {
           const now = Date.now();
-          return {
+          const nextReq: SubscriptionRequest = {
             ...req,
             status: newStatus,
             approvedAt: newStatus === 'approved' ? now : req.approvedAt,
             expiresAt: newStatus === 'approved' ? now + 30 * 24 * 60 * 60 * 1000 : req.expiresAt,
           };
+          targetRequest = nextReq;
+          return nextReq;
         }
         return req;
       });
       localStorage.setItem('teacher_helper_subscription_requests_v1', JSON.stringify(updated));
       setRequests(updated);
-      onUpdateStatus(id, newStatus);
+      onUpdateStatus(id, newStatus, targetRequest);
     } catch (e) {
       console.warn('Failed to update status', e);
     }
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('ይህን ጥያቄ መሰረዝ ይፈልጋሉ?')) {
-      const filtered = requests.filter((r) => r.id !== id);
-      localStorage.setItem('teacher_helper_subscription_requests_v1', JSON.stringify(filtered));
-      setRequests(filtered);
+    if (confirmDeleteId !== id) {
+      setConfirmDeleteId(id);
+      return;
     }
+    const filtered = requests.filter((r) => r.id !== id);
+    localStorage.setItem('teacher_helper_subscription_requests_v1', JSON.stringify(filtered));
+    setRequests(filtered);
+    setConfirmDeleteId(null);
   };
 
   const filteredRequests = requests.filter((r) => {
@@ -106,7 +116,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
             </div>
             <div>
               <span className="text-xs font-bold text-amber-300 uppercase tracking-widest">
-                Admin Control Dashboard (zenayafet)
+                Admin Control Dashboard (@zenayafet)
               </span>
               <h2 className="text-xl font-black">የባለቤት አስተዳዳሪ መቆጣጠሪያ (Payment Approvals)</h2>
             </div>
@@ -128,20 +138,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
               </div>
               <h3 className="text-lg font-black text-stone-900">የአስተዳዳሪ መግቢያ (Admin Login)</h3>
               <p className="text-xs text-stone-500">
-                ለባለቤቱ (ዜናነህ ፀጋዬ) ብቻ የተዘጋጀ። እባክዎ የደህንነት ፒን ቁጥር ያስገቡ (Default PIN: 1234)።
+                ለባለቤቱ (ዜናነህ ፀጋዬ) ብቻ የተዘጋጀ። እባክዎ የአስተዳዳሪ የሚስጥር ቃል (Admin Password) ያስገቡ።
               </p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-                  Admin PIN Code
+                  Admin Password
                 </label>
                 <input
                   type="password"
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
-                  placeholder="Enter PIN (e.g. 1234)"
+                  placeholder="Enter admin password"
                   className="w-full px-4 py-3 text-center text-lg font-mono tracking-widest bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
@@ -169,7 +179,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {/* Filter Tabs & Stats */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-stone-100 p-4 rounded-2xl">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => setFilter('pending')}
                   className={`px-4 py-2 rounded-xl text-xs font-extrabold transition ${
@@ -239,8 +249,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
                       }`}
                     >
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-black text-sm text-stone-900">{req.serviceTitle}</span>
+                          <span className="text-[10px] font-mono bg-stone-200 text-stone-800 px-2 py-0.5 rounded-full font-bold">
+                            {req.id}
+                          </span>
                           <span
                             className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${
                               req.status === 'approved'
@@ -304,10 +317,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
 
                         <button
                           onClick={() => handleDelete(req.id)}
-                          className="p-2 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                          className={`px-2.5 py-2 rounded-xl text-xs font-bold transition ${
+                            confirmDeleteId === req.id
+                              ? 'bg-rose-600 text-white'
+                              : 'text-stone-400 hover:text-rose-600 hover:bg-rose-50'
+                          }`}
                           title="Delete request"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {confirmDeleteId === req.id ? 'Confirm?' : <Trash2 className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>

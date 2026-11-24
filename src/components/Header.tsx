@@ -11,7 +11,6 @@ import {
   MessageSquare, 
   Bookmark, 
   Keyboard, 
-  Sparkles, 
   Printer, 
   School, 
   Zap,
@@ -52,17 +51,17 @@ export const Header: React.FC<HeaderProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
 
   const tabs = [
-    { id: 'lesson-planner' as AppTab, amharic: 'የ1 እና 5 ቀን እቅድ', english: '1 & 5 Days Plans', icon: BookOpen },
-    { id: 'quick-quiz' as AppTab, amharic: '⚡ 1-ቃል ፈተና', english: 'Quick 1-Word Quiz', icon: Zap, highlight: true },
+    { id: 'lesson-planner' as AppTab, amharic: 'የ1 እና 5 ቀን እቅድ', english: 'Lesson Plans', icon: BookOpen },
+    { id: 'quick-quiz' as AppTab, amharic: '⚡ 1-ቃል ፈተና', english: 'Quick Quiz', icon: Zap, highlight: true },
     { id: 'worksheet-maker' as AppTab, amharic: 'ፈተና እና መልመጃ', english: 'Worksheets', icon: FileText },
+    { id: 'mark-list-tools' as AppTab, amharic: '📊 የውጤት መዝገብ', english: 'Mark List & Excel', icon: FileSpreadsheet, highlight: true },
     { id: 'fidel-chart' as AppTab, amharic: 'ፊደል ገበታ', english: 'Fidel Chart', icon: Grid },
     { id: 'grammar-lab' as AppTab, amharic: 'ሰዋሰው ላብ', english: 'Grammar Lab', icon: Compass },
-    { id: 'stories' as AppTab, amharic: 'ተረቶች እና ምንባብ', english: 'Stories & Fables', icon: BookOpenText },
-    { id: 'assignment-grader' as AppTab, amharic: 'ጽሁፍ ገምጋሚ', english: 'Work Grader', icon: CheckCircle2 },
+    { id: 'stories' as AppTab, amharic: 'ተረቶች እና ምንባብ', english: 'Stories', icon: BookOpenText },
+    { id: 'assignment-grader' as AppTab, amharic: 'ጽሁፍ ገምጋሚ', english: 'Grader', icon: CheckCircle2 },
     { id: 'translator' as AppTab, amharic: 'ባህል እና ትርጉም', english: 'Translator', icon: Languages },
     { id: 'chat' as AppTab, amharic: 'መምህር አማካሪ', english: 'AI Mentor', icon: MessageSquare },
-    { id: 'mark-list-tools' as AppTab, amharic: '📊 የውጤት መዝገብ እና ፎርማቶች', english: 'Mark List & Formats', icon: FileSpreadsheet, highlight: true },
-    { id: 'library' as AppTab, amharic: 'ቤተ-መጻሕፍት', english: 'Saved Library', icon: Bookmark, badge: savedCount },
+    { id: 'library' as AppTab, amharic: 'ቤተ-መጻሕፍት', english: 'Saved', icon: Bookmark, badge: savedCount },
   ];
 
   const handleCopyLink = () => {
@@ -72,95 +71,85 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-white border-b border-stone-200/90 sticky top-0 z-40 backdrop-blur-md bg-white/95 no-print">
+    <header className="bg-white/95 border-b border-stone-200/90 sticky top-0 z-40 backdrop-blur-md no-print">
       {/* Top Brand Banner */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
-          {/* Logo & School Workplace Branding */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-500 flex items-center justify-center text-white shadow-md shadow-amber-500/20 font-amharic font-black text-xl shrink-0">
-              ሀ
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-black font-amharic tracking-tight text-stone-900">
-                  {schoolProfile.schoolName || 'የአማርኛ እና የመጀመሪያ ደረጃ መምህር ረዳት'}
-                </h1>
-                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  <Sparkles className="w-3 h-3 text-emerald-600" /> Free & Unlimited
-                </span>
-              </div>
-              <p className="text-[11px] text-stone-500 font-medium truncate max-w-sm sm:max-w-md">
-                {schoolProfile.amharicSchoolName ? `${schoolProfile.amharicSchoolName} • ` : ''}
-                {schoolProfile.woredaSubcity ? `${schoolProfile.woredaSubcity} • ` : ''}
-                Ethiopian Primary Education AI Assistant
+      <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between min-h-16 py-2 gap-2 sm:gap-4">
+          {/* App Icon & Meskerem school ai Branding */}
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <img
+              src="/assets/aistudio/learning-management-system-for-school-8663453-6967857_4c5fb857.png"
+              alt="Meskerem school ai logo"
+              referrerPolicy="no-referrer"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-contain bg-white border border-stone-200 p-0.5 shadow-xs shrink-0"
+            />
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-stone-900 truncate">
+                Meskerem school ai
+              </h1>
+              <p className="text-[11px] text-emerald-800 font-medium truncate max-w-[180px] sm:max-w-md">
+                {schoolProfile.schoolName || 'Meskerem pre-primary , primary and medium school'}
               </p>
             </div>
           </div>
 
           {/* Action Tools */}
-          <div className="flex items-center gap-2">
-            {/* Admin Login Button */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={onOpenAdminDashboard}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-stone-900 hover:bg-stone-800 text-amber-300 border border-stone-700 shadow transition"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 text-amber-300 border border-stone-700 shadow-xs transition whitespace-nowrap shrink-0"
               title="Owner Admin Dashboard"
             >
               <Crown className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">👑 Admin Login</span>
+              <span className="hidden md:inline">Admin</span>
             </button>
 
-            {/* PWA Install Button */}
             <PWAInstallButton />
 
-            {/* Share / Published Link Button */}
             <button
               onClick={() => setIsShareModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition whitespace-nowrap shrink-0"
               title="View & copy published web link"
             >
-              <Share2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="hidden sm:inline">የተጋራ ሊንክ (Published Link)</span>
+              <Share2 className="w-3.5 h-3.5 text-emerald-700" />
+              <span className="hidden lg:inline">Share</span>
             </button>
 
-            {/* Workplace / School Profile Button */}
             <button
               onClick={onOpenSchoolSettings}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 transition"
-              title="Change workplace / primary school name"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition whitespace-nowrap shrink-0"
+              title="Change workplace / school name"
             >
               <School className="w-3.5 h-3.5 text-amber-700" />
-              <span className="hidden md:inline">የስራ ቦታ ስም (Edit School)</span>
-              <span className="md:hidden">School</span>
+              <span className="hidden md:inline">School</span>
             </button>
 
-            {/* Virtual Fidel Pad Toggle */}
             <button
               onClick={onToggleKeyboard}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold border transition whitespace-nowrap shrink-0 ${
                 isKeyboardOpen
-                  ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
+                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
                   : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200'
               }`}
               title="Toggle Amharic On-Screen Fidel Keyboard"
             >
               <Keyboard className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">ፊደል መጻፊያ</span>
+              <span className="hidden lg:inline">ፊደል</span>
             </button>
 
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 transition"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 transition whitespace-nowrap shrink-0"
               title="Print current document"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Print</span>
+              <span className="hidden xl:inline">Print</span>
             </button>
           </div>
         </div>
 
         {/* Navigation Tabs Bar */}
-        <div className="flex space-x-1 overflow-x-auto py-2 no-scrollbar border-t border-stone-100">
+        <nav className="flex items-center gap-1.5 overflow-x-auto py-2 no-scrollbar border-t border-stone-100">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = currentTab === tab.id;
@@ -168,22 +157,24 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all select-none ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all select-none shrink-0 ${
                   isActive
-                    ? 'bg-amber-600 text-white shadow-sm font-semibold'
+                    ? 'bg-emerald-700 text-white shadow-sm font-bold'
                     : tab.highlight
-                    ? 'bg-amber-50 text-amber-900 border border-amber-300/70 hover:bg-amber-100 font-semibold'
+                    ? 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 font-semibold'
                     : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.highlight ? 'text-amber-600' : 'text-stone-400'}`} />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-300' : tab.highlight ? 'text-amber-600' : 'text-stone-400'}`} />
                 <span className="font-amharic">{tab.amharic}</span>
-                <span className="text-[10px] opacity-75 hidden xl:inline">({tab.english})</span>
+                <span className={`text-[10px] hidden xl:inline ${isActive ? 'text-emerald-100' : 'text-stone-400'}`}>
+                  ({tab.english})
+                </span>
 
                 {typeof tab.badge === 'number' && tab.badge > 0 && (
                   <span
-                    className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      isActive ? 'bg-white text-amber-700' : 'bg-amber-100 text-amber-800'
+                    className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      isActive ? 'bg-white text-emerald-800' : 'bg-amber-100 text-amber-800'
                     }`}
                   >
                     {tab.badge}
@@ -192,24 +183,27 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             );
           })}
-        </div>
+        </nav>
       </div>
 
       {/* Published Link Share Modal */}
       {isShareModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-emerald-200 animate-fadeIn space-y-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-emerald-200 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                  <Share2 className="w-5 h-5" />
-                </div>
+                <img
+                  src="/assets/aistudio/learning-management-system-for-school-8663453-6967857_4c5fb857.png"
+                  alt="Meskerem school ai logo"
+                  referrerPolicy="no-referrer"
+                  className="w-10 h-10 rounded-xl object-contain bg-white border border-stone-200 p-0.5 shrink-0"
+                />
                 <div>
                   <h3 className="font-bold text-stone-900 text-sm">
-                    የተጋራ የድረ-ገጽ ሊንክ (Live Published Link)
+                    Meskerem school ai — Share Link
                   </h3>
                   <p className="text-xs text-stone-500">
-                    Share with teachers, school principals & students
+                    Share with teachers, principals & students
                   </p>
                 </div>
               </div>
@@ -217,29 +211,30 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => setIsShareModalOpen(false)}
                 className="p-1.5 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-700"
+                aria-label="Close"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <p className="text-xs text-stone-600 leading-relaxed">
-              Your app is published and live! Anyone with this link can use the <strong>Daily Lesson Plan Generator</strong>, <strong>Quick 1-Word Quiz Maker</strong>, and download documents as <strong>.Docx</strong> without limitations.
+              Share <strong>Meskerem school ai</strong> with educators and students so they can generate lesson plans, quizzes, worksheets, Fidel charts, and mark lists from any phone or computer.
             </p>
 
-            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3 flex items-center justify-between gap-2">
+            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <span className="text-xs font-mono text-stone-800 break-all select-all">
                 {publishedUrl}
               </span>
               <button
                 onClick={handleCopyLink}
-                className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-sm"
+                className="shrink-0 flex items-center justify-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-sm"
               >
                 {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedLink ? 'Copied!' : 'Copy Link'}</span>
               </button>
             </div>
 
-            <div className="pt-2 flex items-center justify-between text-xs">
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
               <a
                 href={publishedUrl}
                 target="_blank"

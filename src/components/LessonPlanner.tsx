@@ -683,6 +683,20 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
   };
 
 
+  const handleSwitchToFiveDays = () => {
+    const proceed = () => {
+      setPlanMode('5-days');
+      if (!fiveDaysPlan.unitAndTopic) {
+        handleLoadFiveDaysSample(languageMode === 'Afaan Oromoo' ? 'Oromic' : languageMode === 'English' ? 'English' : 'Amharic');
+      }
+    };
+    if (onRequireFiveDays) {
+      onRequireFiveDays(proceed);
+    } else {
+      proceed();
+    }
+  };
+
   const handleGenerate = async (overrideTopic?: string, overrideGrade?: string) => {
     setLoading(true);
     setErrorMessage(null);
@@ -964,19 +978,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
           </button>
 
           <button
-            onClick={() => {
-              const proceed = () => {
-                setPlanMode('5-days');
-                if (!fiveDaysPlan.unitAndTopic) {
-                  handleLoadFiveDaysSample('Amharic');
-                }
-              };
-              if (onRequireFiveDays) {
-                onRequireFiveDays(proceed);
-              } else {
-                proceed();
-              }
-            }}
+            onClick={handleSwitchToFiveDays}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all relative ${
               planMode === '5-days'
                 ? 'bg-amber-600 text-white shadow-sm'
@@ -1203,9 +1205,8 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
           </div>
 
           <div className="flex items-center gap-2 self-start md:self-center shrink-0 bg-white/90 px-3.5 py-1.5 rounded-xl border border-stone-200/90 shadow-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span className="text-xs font-black text-stone-800">
-              {languageMode === 'Afaan Oromoo' ? 'Afaan Oromoo' : languageMode === 'Amharic' ? 'አማርኛ' : 'English'}
+              {languageMode === 'Afaan Oromoo' ? '🌳 Afaan Oromoo' : languageMode === 'Amharic' ? '🇪🇹 አማርኛ' : '🇬🇧 English'}
             </span>
           </div>
         </div>
@@ -1401,12 +1402,7 @@ export const LessonPlanner: React.FC<LessonPlannerProps> = ({
             ) : (
               <>
                 <button
-                  onClick={() => {
-                    setPlanMode('5-days');
-                    if (!fiveDaysPlan.unitAndTopic) {
-                      handleLoadFiveDaysSample(languageMode === 'Afaan Oromoo' ? 'Oromic' : 'Amharic');
-                    }
-                  }}
+                  onClick={handleSwitchToFiveDays}
                   className="px-4 py-2.5 rounded-xl text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 transition"
                 >
                   {isOromic ? 'Gara Guyyaa 5tti →' : 'ወደ 5 ቀናት እቅድ →'}

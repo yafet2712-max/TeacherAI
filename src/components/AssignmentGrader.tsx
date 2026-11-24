@@ -217,13 +217,13 @@ export const AssignmentGrader: React.FC<AssignmentGraderProps> = ({ onSaveToLibr
       {/* Evaluation Output */}
       {evaluation && (
         <div className="bg-white rounded-2xl border border-stone-200 shadow-lg overflow-hidden printable-area">
-          <div className="bg-stone-50 border-b border-stone-200 px-6 py-3 flex items-center justify-between gap-3 no-print">
+          <div className="bg-stone-50 border-b border-stone-200 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 no-print">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
               <span className="font-bold text-stone-800 text-sm">የመምህሩ ግምገማ እና እርማት (Teacher's Feedback & Rubric)</span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={handleCopy}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 rounded-lg transition"

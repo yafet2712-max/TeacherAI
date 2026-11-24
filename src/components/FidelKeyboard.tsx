@@ -65,9 +65,8 @@ export const FidelKeyboard: React.FC<FidelKeyboardProps> = ({ onInsertText, isOp
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-stone-900/95 backdrop-blur-md border-t border-amber-600/40 text-stone-100 shadow-2xl transition-all duration-200">
       <div className="max-w-6xl mx-auto px-4 py-3">
         {/* Top Header / Buffer Bar */}
-        <div className="flex items-center justify-between pb-2 border-b border-stone-800 gap-3">
+        <div className="flex flex-wrap items-center justify-between pb-2 border-b border-stone-800 gap-2">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span className="font-semibold text-sm text-amber-300">የአማርኛ ፊደል መጻፊያ (Amharic Fidel Pad)</span>
             <span className="text-xs text-stone-400 hidden sm:inline">| ጠቅ አድርገው ይምረጡ (Click consonant then vowel order)</span>
           </div>
@@ -116,7 +115,7 @@ export const FidelKeyboard: React.FC<FidelKeyboardProps> = ({ onInsertText, isOp
               </span>
             </div>
             
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
               {[
                 { order: 'ግዕዝ (ä)', char: currentFamily.order1 },
                 { order: 'ካዕብ (u)', char: currentFamily.order2 },

@@ -96,6 +96,7 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
   onUpdatePlan,
   onSave,
   isSaved,
+  onConvertToDailyPlan,
 }) => {
   const [plan, setPlan] = useState<FiveDaysPlanData>(initialPlan);
   const [activeDayIndex, setActiveDayIndex] = useState<number | 'all'>(0);
@@ -225,7 +226,17 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {onConvertToDailyPlan && activeDayIndex !== 'all' && plan.days[activeDayIndex] && (
+            <button
+              onClick={() => onConvertToDailyPlan(plan.days[activeDayIndex])}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl transition"
+              title="Open selected day as an editable 1-day lesson plan"
+            >
+              <span>📄 Open as 1-Day Plan</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsEditing(!isEditing)}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border transition ${
@@ -262,7 +273,7 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
             title="Download formatted Microsoft Word .docx file matching daily format 100%"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Download .Docx (Word)</span>
+            <span>Download .Docx</span>
           </button>
 
           <button
@@ -270,7 +281,7 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
             className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold bg-stone-900 hover:bg-stone-800 text-white rounded-xl transition shadow"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Print Official Plan</span>
+            <span>Print</span>
           </button>
         </div>
       </div>
@@ -314,7 +325,7 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         type="text"
                         value={plan.teacherName}
                         onChange={(e) => handleFieldChange('teacherName', e.target.value)}
-                        className="border-b border-amber-500 font-semibold px-1 py-0.5 w-60 focus:outline-none"
+                        className="border-b border-amber-500 font-semibold px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                       />
                     ) : (
                       <span className="font-semibold">{plan.teacherName || '________________________'}</span>
@@ -328,7 +339,7 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         type="text"
                         value={plan.schoolName}
                         onChange={(e) => handleFieldChange('schoolName', e.target.value)}
-                        className="border-b border-amber-500 font-semibold px-1 py-0.5 w-60 focus:outline-none"
+                        className="border-b border-amber-500 font-semibold px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                       />
                     ) : (
                       <span className="font-semibold uppercase">{plan.schoolName || '________________________________'}</span>
@@ -344,7 +355,7 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         type="text"
                         value={plan.subject}
                         onChange={(e) => handleFieldChange('subject', e.target.value)}
-                        className="border-b border-amber-500 px-1 py-0.5 w-48 focus:outline-none"
+                        className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-48 focus:outline-none"
                       />
                     ) : (
                       <span>{plan.subject || '____________________'}</span>
@@ -358,7 +369,7 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         type="text"
                         value={plan.unitAndTopic}
                         onChange={(e) => handleFieldChange('unitAndTopic', e.target.value)}
-                        className="border-b border-amber-500 px-1 py-0.5 w-60 focus:outline-none"
+                        className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-60 focus:outline-none"
                       />
                     ) : (
                       <span>{plan.unitAndTopic || '________________________'}</span>
@@ -374,7 +385,7 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         type="text"
                         value={plan.gradeAndSection}
                         onChange={(e) => handleFieldChange('gradeAndSection', e.target.value)}
-                        className="border-b border-amber-500 px-1 py-0.5 w-40 focus:outline-none"
+                        className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-40 focus:outline-none"
                       />
                     ) : (
                       <span>{plan.gradeAndSection || '____________'}</span>
@@ -388,7 +399,7 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                         type="text"
                         value={day.lessonTopic || day.subTopic || ''}
                         onChange={(e) => handleDayFieldChange(dayIdx, 'lessonTopic', e.target.value)}
-                        className="border-b border-amber-500 px-1 py-0.5 w-60 focus:outline-none font-semibold text-amber-900"
+                        className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-60 focus:outline-none font-semibold text-amber-900"
                       />
                     ) : (
                       <span className="font-semibold text-amber-900">{day.lessonTopic || day.subTopic || '________________________'}</span>
@@ -403,7 +414,7 @@ export const FiveDaysPlanView: React.FC<FiveDaysPlanViewProps> = ({
                       type="text"
                       value={day.date || day.dayName}
                       onChange={(e) => handleDayFieldChange(dayIdx, 'date', e.target.value)}
-                      className="border-b border-amber-500 px-1 py-0.5 w-64 focus:outline-none"
+                      className="border-b border-amber-500 px-1 py-0.5 w-full sm:w-64 focus:outline-none"
                     />
                   ) : (
                     <span>{day.date || day.dayName || '____________________'}</span>
